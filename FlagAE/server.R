@@ -6,6 +6,14 @@ library(DT)
 library(ggplot2)
 
 
+#####################################################################################################
+#######################################################################################################
+ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
+ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
+
+#######################################################################################################
+#######################################################################################################
+
 server <- function(input, output) {
 
   ################################################################################
@@ -13,34 +21,45 @@ server <- function(input, output) {
   ############## get the summary of the adverase event data  #####################
   ##############                                             #####################
   ################################################################################
-  # get the ADSL.csv
-  # ADSL is a reactive variable
-  ADSL<-reactive({
-    ADSLread<-input$ADSLInput
-    if (is.null(ADSLread))
-      return(NULL)
-    read.csv(ADSLread$datapath, header=TRUE)
-  })
 
-  # get the ADAE.csv
-  # ADAE is a reactive variable
-  ADAE<-reactive({
-    ADAEread<-input$ADAEInput
-    if (is.null(ADAEread))
-      return(NULL)
-    read.csv(ADAEread$datapath, header=TRUE)
-  })
+  AEdata<-function(){
+   preprocess(adsl=ADSL, adae=ADAE)
+  }
 
-  # get the AEdata from preprocess4 function in libarary FlagAE
-  AEdata<-reactive({
 
-    ADSLread<-input$ADSLInput
-    ADAEread<-input$ADAEInput
-    if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
-
-    preprocess(adsl=ADSL(), adae=ADAE())
-  })
-
+#######################################################################################################
+#######################################################################################################
+#   # get the ADSL.csv
+#   # ADSL is a reactive variable
+#   ADSL<-reactive({
+#     ADSLread<-input$ADSLInput
+#     if (is.null(ADSLread))
+#       return(NULL)
+#     read.csv(ADSLread$datapath, header=TRUE)
+#   })
+#
+#   # get the ADAE.csv
+#   # ADAE is a reactive variable
+#   ADAE<-reactive({
+#     ADAEread<-input$ADAEInput
+#     if (is.null(ADAEread))
+#       return(NULL)
+#     read.csv(ADAEread$datapath, header=TRUE)
+#   })
+#
+#   # get the AEdata from preprocess4 function in libarary FlagAE
+#   AEdata<-reactive({
+#
+#     ADSLread<-input$ADSLInput
+#     ADAEread<-input$ADAEInput
+#     if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
+#
+#     preprocess(adsl=ADSL(), adae=ADAE())
+#   })
+#
+#
+# ###############################################################################################################
+# ###############################################################################################################
   # output subject and adverse event summary
   output$AEsummary<-DT::renderDataTable({
 
@@ -106,43 +125,64 @@ server <- function(input, output) {
   })
 
   FETplotInput<-function(){
-    # if (input$FETInput==FALSE | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
-    # if (input$FETInput==0 | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
+
     if (FETv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
+    #if (FETv$doPlot==0 ) return ()
+    #if (!(FETv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput))){
     isolate({
-    gci(aedata=AEdata(), ptnum = input$PTnumInput, conf.level = input$confInput)
+    FETplot(aedata=AEdata(), ptnum = input$PTnumInput, conf.level = input$confInput)
     })
+
   }
   # plot out the plot
   output$FETplot<-renderPlot({
+    if(FETv$doPlot==FALSE) return ()
+
     FETplotInput()
+
   })
   # provide the download option for user
-  output$FETplotdown<-renderUI({
-    # if(!(input$FETInput==FALSE) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
-    #   downloadButton('FETplotdownload', "Download the plot")
-    # }
-
-    if(!(FETv$doPlot==0) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
-      downloadButton('FETplotdownload', "Download the plot")
+  # user can download the figure either as pdf or as jpeg
+  output$FETplotdownpdf<-renderUI({
+    if(!(FETv$doPlot==FALSE) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
+      downloadButton('FETplotdownloadpdf', "Download the plot as a .pdf file")
     }
-
   })
 
-  output$FETplotdownload <- downloadHandler(
-    filename <- "test.jpeg",
+  output$FETplotdownjpeg<-renderUI({
+    if(!(FETv$doPlot==FALSE) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
+      downloadButton('FETplotdownloadjpeg', "Download the plot as a .jpeg file")
+    }
+  })
+
+
+  output$FETplotdownloadpdf <- downloadHandler(
+    filename <- "test.pdf",
     content <- function(file) {
-      jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
+      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
+      pdf(file, width=8, height=6.4)
       #tiff(file, width=6, height=4.8, res = 300)
       FETplotInput()
       dev.off()
     })
 
+  output$FETplotdownloadjpeg <- downloadHandler(
+    filename <- "test.jpeg",
+    content <- function(file) {
+      jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
+      #pdf(file, width=8, height=6.4)
+      #tiff(file, width=6, height=4.8, res = 300)
+      FETplotInput()
+      dev.off()
+    })
+
+
   # create the table for details of AE selected in above plot
   FETtableInput<-reactive({
     if (FETv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
-    topPTlist<-gci3(aedata=AEdata(), ptnum=input$PTnumInput, conf.level = input$confInput)
-    AEdata()[AEdata()$AEDECOD %in% topPTlist, ]
+    #topPTlist<-gci3(aedata=AEdata(), ptnum=input$PTnumInput, conf.level = input$confInput)
+    #AEdata()[AEdata()$AEDECOD %in% topPTlist, ]
+    topPTlist<-FETtable(aedata=AEdata(), ptnum=input$PTnumInput, conf.level = input$confInput)
   })
 
   output$TopAE<-DT::renderDataTable({
@@ -170,76 +210,6 @@ server <- function(input, output) {
   ##############                                             #####################
   ################################################################################
 
-  # give values for Gibbs samplinig parameters
-  output$HierSampleInput<-renderUI({
-    Samplelist<-tagList()
-    # number of adaptation
-    Samplelist[[1]]<-numericInput("HieradaptInput", "Adaptation", value = 10)
-    # number of burn in
-    Samplelist[[2]]<-numericInput("HierburnInput", "Burn In", value = 10)
-    # number of iteration
-    Samplelist[[3]]<-numericInput("HieriterInput", "Iterations", value = 10)
-    # number of thin
-    Samplelist[[4]]<-numericInput("HierthinInput", "Thin", value = 2)
-    # number of chains
-    Samplelist[[5]]<-numericInput("HierchainInput", "Chains", value = 2)
-
-    Samplelist
-  })
-
-  # give values to whether to show the option to let the user to chose
-  # to use different initials for different chains
-  output$HierDiffInput<-renderUI({
-    Chains<-input$HierchainInput
-    if(is.null(Chains)) return(NULL)
-    if(Chains<=1) return(NULL)
-    checkboxInput("HierDiffInitInput", "Check to use DIFFERENT initials for different chains")
-  })
-
-  # give values for Hierarchical model Initials
-
-  output$HierInitInput<-renderUI({
-
-    Initallist<-tagList()
-    Chains<-input$HierchainInput
-    if(is.null(Chains)) return()
-
-    # one chain
-    if (Chains==1){
-      Initallist[[1]]<-numericInput(inputId = "mu_gamma_0", label = "mu_gamma_0", value= 0.1)
-      Initallist[[2]]<-numericInput(inputId = "tau_gamma_0", label = "tau_gamma_0", value= 0.1)
-      Initallist[[3]]<-numericInput(inputId = "mu_theta_0", label = "mu_theta_0", value= 0.1)
-      Initallist[[4]]<-numericInput(inputId = "tau_theta_0", label = "tau_theta_0", value= 0.1)
-      Initallist[[5]]<-numericInput(inputId = "alpha_pi", label = "alpha_pi", value= 2)
-      Initallist[[6]]<-numericInput(inputId = "beta_pi", label = "beta_pi", value= 2)
-    }
-
-    # same initials for all chains
-    if(Chains>1 & !is.null(input$HierDiffInitInput)){
-      if (input$HierDiffInitInput==FALSE){
-        Initallist[[1]]<-numericInput(inputId = "mu_gamma_0", label = "mu_gamma_0", value= 0.1)
-        Initallist[[2]]<-numericInput(inputId = "tau_gamma_0", label = "tau_gamma_0", value= 0.1)
-        Initallist[[3]]<-numericInput(inputId = "mu_theta_0", label = "mu_theta_0", value= 0.1)
-        Initallist[[4]]<-numericInput(inputId = "tau_theta_0", label = "tau_theta_0", value= 0.1)
-        Initallist[[5]]<-numericInput(inputId = "alpha_pi", label = "alpha_pi", value= 2)
-        Initallist[[6]]<-numericInput(inputId = "beta_pi", label = "beta_pi", value= 2)
-      }
-
-      # different initials for different chains
-      if(input$HierDiffInitInput==TRUE){
-        for(i in 1:Chains){
-          Initallist[[((i-1)*6+1)]]<-numericInput(inputId = paste0("C", i, "_mu_gamma_0"), label =paste0("mu_gamma_0 for Chain ", i) , value= 0.1)
-          Initallist[[((i-1)*6+2)]]<-numericInput(inputId = paste0("C", i, "_tau_gamma_0"), label =paste0("tau_gamma_0 for Chain ", i) , value= 0.1)
-          Initallist[[((i-1)*6+3)]]<-numericInput(inputId = paste0("C", i, "_mu_theta_0"), label =paste0("mu_theta_0 for Chain ", i) , value= 0.1)
-          Initallist[[((i-1)*6+4)]]<-numericInput(inputId = paste0("C", i, "_tau_theta_0"), label =paste0("tau_theta_0 for Chain ", i) , value= 0.1)
-          Initallist[[((i-1)*6+5)]]<-numericInput(inputId = paste0("C", i, "_alpha_pi"), label =paste0("alpha_pi for Chain ", i) , value= 2)
-          Initallist[[((i-1)*6+6)]]<-numericInput(inputId = paste0("C", i, "_beta_pi"), label =paste0("beta_pi for Chain ", i) , value= 2)
-        }
-      }
-    }
-
-    Initallist
-  })
 
   # show the table from the hierarchical model
   # summary of the hierarchical model
@@ -257,70 +227,98 @@ server <- function(input, output) {
     Hierv$doPlot <- input$HierInput
   })
 
-  observeEvent((input$HierSampleInput & input$HierInitInput), {
+  observeEvent((input$HieradaptInput & input$HierburnInput &
+                  input$HieriterInput & input$HierthinInput &
+                  input$HierchainInput &
+                  input$alpha.gamma.input & input$alpha.theta.input &
+                  input$mu.gamma.0.0.input & input$alpha.gamma.0.0.input &
+                  input$mu.theta.0.0.input & input$alpha.theta.0.0.input &
+                  input$lambda.alpha.input &
+                  input$beta.gamma.input & input$beta.theta.input &
+                  input$tau.gamma.0.0.input & input$beta.gamma.0.0.input &
+                  input$tau.theta.0.0.input & input$beta.theta.0.0.input &
+                  input$lambda.beta.input), {
     Hierv$doPlot <- FALSE
   })
 
+
+
   #run the model
   Hiermodel<- function(){
-    Chains<-input$HierchainInput
-    if (Hierv$doPlot==0 ) return ()
-    if (is.null(Chains)) return ()
-    if (Chains>1 & is.null(input$HierDiffInitInput)) return ()
 
+    if (Hierv$doPlot==FALSE ) return ()
 
     isolate({
-       #first create the INITS
-      if(Chains==1){
-        INITS_SingleChain<-list(mu.gamma.0=input$mu_gamma_0, tau.gamma.0=input$tau_gamma_0, mu.theta.0=input$mu_theta_0,
-                                tau.theta.0=input$tau_theta_0, alpha.pi=input$alpha_pi, beta.pi=input$beta_pi)
-        # run the model
-        HierData<-Hier(aedata=AEdata(), inits=INITS_SingleChain, n_burn=input$HierburnInput,
+
+        HierData<-Hier(aedata=AEdata(), n_burn=input$HierburnInput,
                        n_iter=input$HieriterInput, thin=input$HierthinInput, n_adapt = input$HieradaptInput,
-                       n_chain = 1)
-      }
-      if(Chains>1){
-        INITS_MultChain<-list()
-        # use same initials for all chains
-        if(input$HierDiffInitInput==FALSE){
-          for(i in 1:Chains){
-            INITS_MultChain[[i]]<-list(mu.gamma.0=input$mu_gamma_0, tau.gamma.0=input$tau_gamma_0, mu.theta.0=input$mu_theta_0,
-                                       tau.theta.0=input$tau_theta_0, alpha.pi=input$alpha_pi, beta.pi=input$beta_pi)
-          }
-        }
-
-        # use different initials for different chains
-        if(input$HierDiffInitInput==TRUE){
-          for(i in 1:Chains){
-            INITS_MultChain[[i]]<-list(mu.gamma.0=input[[paste0("C", i, "_mu_gamma_0")]],
-                                            tau.gamma.0=input[[paste0("C", i, "_tau_gamma_0")]],
-                                            mu.theta.0=input[[paste0("C", i, "_mu_theta_0")]],
-                                            tau.theta.0=input[[paste0("C", i, "_tau_theta_0")]],
-                                            alpha.pi=input[[paste0("C", i, "_alpha_pi")]],
-                                            beta.pi=input[[paste0("C", i, "_beta_pi")]])
-          }
-        }
-
-      # run the model
-      HierData<-Hier(aedata=AEdata(), inits=INITS_MultChain, n_burn=input$HierburnInput,
-                       n_iter=input$HieriterInput, thin=input$HierthinInput, n_adapt = input$HieradaptInput,
-                       n_chain = Chains)
-      }
-
-      HierData
+                       n_chain = input$HierchainInput,
+                       alpha.gamma =input$alpha.gamma.input, beta.gamma = input$beta.gamma.input,
+                       alpha.theta = input$alpha.theta.input, beta.theta = input$beta.theta.input,
+                       mu.gamma.0.0 = input$mu.gamma.0.0.input, tau.gamma.0.0 = input$tau.gamma.0.0.input,
+                       alpha.gamma.0.0 = input$alpha.gamma.0.0.input, beta.gamma.0.0 = input$beta.gamma.0.0.input,
+                       lambda.alpha = input$lambda.alpha.input, lambda.beta = input$lambda.beta.input,
+                       mu.theta.0.0 = input$mu.theta.0.0.input, tau.theta.0.0 = input$tau.theta.0.0.input,
+                       alpha.theta.0.0 = input$alpha.theta.0.0.input, beta.theta.0.0 = input$beta.theta.0.0.input)
 
      })
   }
 
-    output$Hiertable<-DT::renderDataTable({
-      Hiermodel()
-    })
+  # show the table
+
+  HIERDATA<-reactive({
+    if (Hierv$doPlot==FALSE) return ()
+    Hiermodel()
+  })
+  output$Hierfulltable<-DT::renderDataTable({
+    HIERDATA()
+  })
+
+  # show the Hier plot of top AEs
+  HierplotInput<-function(){
+    if (Hierv$doPlot==FALSE) return ()
+    Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam)
+  }
+
+  output$Hierplot<-renderPlot({
+    if(is.null(HierplotInput())) return ()
+    if(input$HierplotInput==FALSE) return ()
+    HierplotInput()
+  })
+
+  # download option for table containing information of AE in the plot
+  HiertableInput<-function(){
+    if (Hierv$doPlot==FALSE) return ()
+    Hiertable(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam)
+  }
+
+  output$Hiertabledown<-renderUI({
+    if(is.null(HierplotInput())) return ()
+    if(input$HierplotInput==FALSE) return ()
+    downloadButton('Hiertabledownload', "Download table for details of AEs shown in plot")
+  })
+
+  output$Hiertabledownload<-downloadHandler(
+    filename <- function(){paste("Hiertable", ".csv")},
+    content <-function(file){
+      write.csv(HiertableInput(), file, row.names = FALSE)
+    }
+  )
 
 
 
+  # table download option
+  output$Hierfulltabledown<-renderUI({
+    if (Hierv$doPlot==FALSE) return ()
+    downloadButton('Hierfulltabledownload', "Download the whole table")
+  })
 
-
-
+  output$Hierfulltabledownload<-downloadHandler(
+    filename <- function(){paste("Hiermodelfulltable", ".csv")},
+    content <-function(file){
+      write.csv(Hiermodel(), file, row.names = FALSE)
+    }
+  )
 
 
 

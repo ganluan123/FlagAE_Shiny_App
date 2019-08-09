@@ -63,7 +63,15 @@ ui <- fluidPage(
                              # download option
                              # use uiOutput to make sure that the download button wont appear
                              # before the plot shown
-                             uiOutput("FETplotdown"),
+
+                             fluidRow(
+                               column(5,
+                                      uiOutput("FETplotdownpdf")
+                               ),
+                               column(5,
+                                      uiOutput("FETplotdownjpeg")
+                               )
+                             ),
 
                              br(),br(),
 
@@ -85,21 +93,73 @@ ui <- fluidPage(
                   tabPanel("Three Stage Hierarchical Model",
 
                            fluidRow(
-                             column(5,
-                                    h4("Gibbs sampling paramters"),
-                                    # Let user to select the Gibbs sampling paramters
-                                    uiOutput("HierSampleInput")
-
+                             column(4,
+                                    offset=0,
+                                    div(style='margin :0%;',
+                                        tags$h4("Gibbs sampling paramters"),
+                                        # Let user input the Gibbs sampling paramters
+                                        numericInput("HieradaptInput", "Adaptation", value = 10),
+                                        numericInput("HierburnInput", "Burn In", value = 10),
+                                        numericInput("HieriterInput", "Iterations", value = 10),
+                                        numericInput("HierthinInput", "Thin", value = 2),
+                                        numericInput("HierchainInput", "Chains", value = 2)
+                                        )
                                     ),
 
-                             column(5,
-                                    h4("Initials"),
-                                    uiOutput("HierDiffInput"),
-                                    #checkboxInput("HierDiffInitInput", "Check to use DIFFERENT initials for different chains"),
-                                    # take the initials
-                                    uiOutput("HierInitInput")
+                             column(6,
+                                    offset=0,
+                                    div(style='margin :0%;',
+                                    tags$h4("Hyperparameters for prior distribution"),
+                                    #withMathJax(),
+                                    # let user input the hyperparameters for prior distribution
+                                    fluidRow(
+                                      column(3,
+                                             offset=0,
+                                             div(style='margin :0%;',
+                                             numericInput("alpha.gamma.input",HTML("&alpha;<sub>&gamma;</sub>") ,  value = 3),
+                                             numericInput("alpha.theta.input",HTML("&alpha;<sub>&theta;</sub>") , value = 3),
+                                             numericInput("mu.gamma.0.0.input",HTML("&mu;<sub>&gamma;00</sub>") , value = 0),
+                                             numericInput("alpha.gamma.0.0.input",HTML("&alpha;<sub>&gamma;00</sub>") , value = 3),
+                                             numericInput("mu.theta.0.0.input",HTML("&mu;<sub>&theta;00</sub>") , value = 0),
+                                             numericInput("alpha.theta.0.0.input",HTML("&alpha;<sub>&theta;00</sub>") , value = 3),
+                                             numericInput("lambda.alpha.input",HTML("&lambda;<sub>&alpha;</sub>"), value = 0.1)
+                                             )
 
+                                            ),
+                                      column(3,
+                                             offset = 0,
+                                             div(style='margin: 0%;',
+                                             numericInput("beta.gamma.input",HTML("&beta;<sub>&gamma;</sub>") , value = 1),
+                                             numericInput("beta.theta.input",HTML("&beta;<sub>&theta;</sub>") , value = 1),
+                                             numericInput("tau.gamma.0.0.input",HTML("&tau;<sub>&gamma;00</sub>") , value = 0.1),
+                                             numericInput("beta.gamma.0.0.input",HTML("&beta;<sub>&gamma;00</sub>") , value = 1),
+                                             numericInput("tau.theta.0.0.input",HTML("&tau;<sub>&theta;00</sub>") , value = 0.1),
+                                             numericInput("beta.theta.0.0.input",HTML("&beta;<sub>&theta;00</sub>") , value = 1),
+                                             numericInput("lambda.beta.input",HTML("&lambda;<sub>&beta;</sub>") , value = 0.1)
+                                             )
+                                             )
                                     )
+                                    )
+
+                                   ),
+
+                             column(2,
+                                    offset=0,
+                                    div(style='margin-left: -15em;',
+                                    tags$h4("Plot the top Adeverse Event"),
+                                    numericInput("Hierplotptnum", "Number of AEs to plot", value=10),
+                                    selectInput("Hierplotparam", "summary statistics based on to select AE",
+                                                c("risk difference", "odds ratio"), selected = "risk difference"),
+                                    actionButton("HierplotInput", "Plot", width='100%'),
+
+                                    # plot top AEs from the Hierrachical model
+                                    plotOutput("Hierplot"),
+
+                                    # download option for table of top AEs
+                                    uiOutput("Hiertabledown")
+                                    )
+                             )
+
 
 
                            ),
@@ -110,14 +170,20 @@ ui <- fluidPage(
                            # only run after selecting all the parameter and hit the run button
                            actionButton("HierInput", "Run", width = '100%'),
                            br(),br(),
+
                            # Hierarchical model table output
-                           DT::dataTableOutput("Hiertable")
+                           DT::dataTableOutput("Hierfulltable"),
+
+                           # download option
+                           uiOutput("Hierfulltabledown")
+
+
 
 
 
                   )
 
-                   )
+              )
 
 
     )
