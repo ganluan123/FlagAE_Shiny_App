@@ -95,114 +95,97 @@ server <- function(input, output) {
 
   # take PTnumInput and confInput if user select to plot out Fisher Exact Test Plot
   output$PTnumInput<-renderUI({
-    #if(input$FETInput==FALSE ) return (NULL)
+    #if(input$BCIInput==FALSE ) return (NULL)
     numericInput("PTnumInput", "Insert the number of adverse events to show", value = 10)
   })
 
   output$confInput<-renderUI({
-    #if(input$FETInput==FALSE)  return (NULL)
+    #if(input$BCIInput==FALSE)  return (NULL)
     numericInput("confInput", "Insert the confidence level for fisher exact test",
                                value = 0.95, min=0, max=1, step = 0.025)
   })
 
   # create the plot with activation button
 
-  # the FETv is to make sure that the plot and table will
+  # the BCIv is to make sure that the plot and table will
   # disappear and will not run before user click 'Run' button
-  FETv <- reactiveValues(doPlot = FALSE)
+  BCIv <- reactiveValues(doPlot = FALSE)
 
-  observeEvent(input$FETInput, {
+  observeEvent(input$BCIInput, {
     # 0 will be coerced to FALSE
     # 1+ will be coerced to TRUE
-    FETv$doPlot <- input$FETInput
+    BCIv$doPlot <- input$BCIInput
   })
 
   # my understanding is that this is to make sure that
   # whenever user change PTnumInput or confInput, the plot
   # will disappear and wont run before user click run button
   observeEvent((input$PTnumInput & input$confInput), {
-    FETv$doPlot <- FALSE
+    BCIv$doPlot <- FALSE
   })
 
-  FETplotInput<-function(){
+  BCIplotInput<-function(){
 
-    if (FETv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
-    #if (FETv$doPlot==0 ) return ()
-    #if (!(FETv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput))){
+    if (BCIv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
+    #if (BCIv$doPlot==0 ) return ()
+    #if (!(BCIv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput))){
     isolate({
-    FETplot(aedata=AEdata(), ptnum = input$PTnumInput, conf.level = input$confInput)
+    BCIplot(aedata=AEdata(), ptnum = input$PTnumInput, conf.level = input$confInput)
     })
 
   }
   # plot out the plot
-  output$FETplot<-renderPlot({
-    if(FETv$doPlot==FALSE) return ()
-
-    FETplotInput()
+  output$BCIplot<-renderPlot({
+    if(BCIv$doPlot==FALSE) return ()
+    BCIplotInput()
 
   })
   # provide the download option for user
-  # user can download the figure either as pdf or as jpeg
-  output$FETplotdownpdf<-renderUI({
-    if(!(FETv$doPlot==FALSE) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
-      downloadButton('FETplotdownloadpdf', "Download the plot as a .pdf file")
+
+  output$BCIplotdownjpeg<-renderUI({
+    if(!(BCIv$doPlot==FALSE) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
+      downloadButton('BCIplotdownloadjpeg', "Download the plot")
     }
   })
 
-  output$FETplotdownjpeg<-renderUI({
-    if(!(FETv$doPlot==FALSE) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
-      downloadButton('FETplotdownloadjpeg', "Download the plot as a .jpeg file")
-    }
-  })
-
-
-  output$FETplotdownloadpdf <- downloadHandler(
-    filename <- "test.pdf",
-    content <- function(file) {
-      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      pdf(file, width=8, height=6.4)
-      #tiff(file, width=6, height=4.8, res = 300)
-      FETplotInput()
-      dev.off()
-    })
-
-  output$FETplotdownloadjpeg <- downloadHandler(
-    filename <- "test.jpeg",
+  output$BCIplotdownloadjpeg <- downloadHandler(
+    filename <- "BCIplot.jpeg",
     content <- function(file) {
       jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      #pdf(file, width=8, height=6.4)
-      #tiff(file, width=6, height=4.8, res = 300)
-      FETplotInput()
+      # jpeg(file)
+      BCIplotInput()
       dev.off()
-    })
+  })
 
 
   # create the table for details of AE selected in above plot
-  FETtableInput<-reactive({
-    if (FETv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
-    #topPTlist<-gci3(aedata=AEdata(), ptnum=input$PTnumInput, conf.level = input$confInput)
-    #AEdata()[AEdata()$AEDECOD %in% topPTlist, ]
-    topPTlist<-FETtable(aedata=AEdata(), ptnum=input$PTnumInput, conf.level = input$confInput)
+  BCItableInput<-reactive({
+    if (BCIv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput)) return ()
+
+    topPTlist<-BCItable(aedata=AEdata(), ptnum=input$PTnumInput, conf.level = input$confInput)
   })
 
   output$TopAE<-DT::renderDataTable({
-    FETtableInput()
+    BCItableInput()
   },
   caption = "Detail information of adverse events shown in plot above"
   )
 
   # create the download option for user to download the table
-  output$FETtabledown<-renderUI({
-    if(!(FETv$doPlot==0) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
-      downloadButton('FETtabledownload', "Download the table")
+  output$BCItabledown<-renderUI({
+    if(!(BCIv$doPlot==0) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
+      downloadButton('BCItabledownload', "Download the table")
     }
   })
 
-  output$FETtabledownload<-downloadHandler(
-    filename <- function(){paste("test", ".csv")},
-    content <-function(file){
-      write.csv(FETtableInput(), file, row.names = FALSE)
+  output$BCItabledownload<-downloadHandler(
+    filename = function(){paste("BCItable", ".csv")},
+    content =function(file){
+      write.csv(BCItableInput(), file, row.names = FALSE)
     })
+
+
+
 
   ################################################################################
   ##############                                             #####################
@@ -265,7 +248,6 @@ server <- function(input, output) {
   }
 
   # show the table
-
   HIERDATA<-reactive({
     if (Hierv$doPlot==FALSE) return ()
     Hiermodel()
@@ -274,10 +256,44 @@ server <- function(input, output) {
     HIERDATA()
   })
 
+  # table download option
+  output$Hierfulltabledown<-renderUI({
+    if (Hierv$doPlot==FALSE) return ()
+    downloadButton('Hierfulltabledownload', "Download the whole table")
+  })
+
+  output$Hierfulltabledownload<-downloadHandler(
+    filename <- function(){paste("Hiermodelfulltable", ".csv")},
+    content <-function(file){
+      write.csv(Hiermodel(), file, row.names = FALSE)
+    }
+  )
+
   # show the Hier plot of top AEs
+  # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
+  output$HierORylimLB<-renderUI({
+    if (input$Hierplotparam=="risk difference") return ()
+    numericInput("HierORylimLBInput", "y-axis lower limit", value=0)
+  })
+
+  output$HierORylimUB<-renderUI({
+    if (input$Hierplotparam=="risk difference") return ()
+    numericInput("HierORylimUBInput", "y-axis upper limit", value=5)
+  })
+
   HierplotInput<-function(){
     if (Hierv$doPlot==FALSE) return ()
-    Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam)
+    if (input$HierplotInput==FALSE) return()
+    isolate({
+      if (input$Hierplotparam=="risk difference"){
+        Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam)
+      }
+      else {
+        Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam,
+                 OR_ylim = c(input$HierORylimLBInput, input$HierORylimUBInput))
+      }
+    })
+
   }
 
   output$Hierplot<-renderPlot({
@@ -285,6 +301,35 @@ server <- function(input, output) {
     if(input$HierplotInput==FALSE) return ()
     HierplotInput()
   })
+
+  # show the warning if user try to plot before running model
+  output$Hiermodelfirst<-renderUI({
+    if(is.null(HierplotInput()) & !(input$HierplotInput==FALSE)) {
+      textOutput("Modelfirstoutput")
+      # span(textOutput("Modelfirstoutput"), style="color:red")
+    }
+  })
+
+  output$Modelfirstoutput<-renderText({
+    # if (!(is.null(HierplotInput()) & !(input$HierplotInput==FALSE))) return ()
+    "Please run the model before plot"
+  })
+
+  # download option for Hier plot of top AEs
+  output$Hierplotdown<-renderUI({
+    if(!is.null(HierplotInput()) & !(input$HierplotInput==FALSE)){
+      downloadButton('Hierplotdownload', "Download the plot")
+    }
+  })
+
+  output$Hierplotdownload <- downloadHandler(
+    filename <- function(){paste0("Hireplot", ".jpeg")},
+    content <- function(file) {
+      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
+      #jpeg(file)
+      ggsave(file, plot=HierplotInput())
+    })
+
 
   # download option for table containing information of AE in the plot
   HiertableInput<-function(){
@@ -307,18 +352,7 @@ server <- function(input, output) {
 
 
 
-  # table download option
-  output$Hierfulltabledown<-renderUI({
-    if (Hierv$doPlot==FALSE) return ()
-    downloadButton('Hierfulltabledownload', "Download the whole table")
-  })
 
-  output$Hierfulltabledownload<-downloadHandler(
-    filename <- function(){paste("Hiermodelfulltable", ".csv")},
-    content <-function(file){
-      write.csv(Hiermodel(), file, row.names = FALSE)
-    }
-  )
 
 
 

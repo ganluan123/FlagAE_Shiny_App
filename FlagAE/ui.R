@@ -45,7 +45,7 @@ ui <- fluidPage(
                   ##############                                             #####################
                   ################################################################################
 
-                    tabPanel("Fisher Exact Test",
+                    tabPanel("Binomial CI",
 
                              # Let user select the number of AE to show and the confidence level
                              # use uiOutput to make sure the option will not show before
@@ -53,25 +53,20 @@ ui <- fluidPage(
                              uiOutput("PTnumInput"),
                              uiOutput("confInput"),
                              # Let user to select whether to calcuate the result from Fisher Exact Test
-                             #checkboxInput("FETInput", "Check the box to show the Fisher Exact Test result", FALSE),
-                             actionButton("FETInput", "Run", width='100%'),
+                             #checkboxInput("BCIInput", "Check the box to show the Fisher Exact Test result", FALSE),
+                             actionButton("BCIInput", "Run", width='100%'),
                              br(), br(),
 
                              # plot the AEs with biggest difference in incidence risk between
                              # treatment and control group
-                             plotOutput("FETplot"),
+                             plotOutput("BCIplot"),
                              # download option
                              # use uiOutput to make sure that the download button wont appear
                              # before the plot shown
 
-                             fluidRow(
-                               column(5,
-                                      uiOutput("FETplotdownpdf")
-                               ),
-                               column(5,
-                                      uiOutput("FETplotdownjpeg")
-                               )
-                             ),
+
+                             uiOutput("BCIplotdownjpeg"),
+
 
                              br(),br(),
 
@@ -80,7 +75,7 @@ ui <- fluidPage(
                              # download option
                              # use uiOutput to make sure that the download button wont appear
                              # before the table shown
-                             uiOutput("FETtabledown")
+                             uiOutput("BCItabledown")
                              ),
 
                   ################################################################################
@@ -109,7 +104,7 @@ ui <- fluidPage(
                              column(6,
                                     offset=0,
                                     div(style='margin :0%;',
-                                    tags$h4("Hyperparameters for prior distribution"),
+                                    tags$h4("Hyperparameters"),
                                     #withMathJax(),
                                     # let user input the hyperparameters for prior distribution
                                     fluidRow(
@@ -150,10 +145,25 @@ ui <- fluidPage(
                                     numericInput("Hierplotptnum", "Number of AEs to plot", value=10),
                                     selectInput("Hierplotparam", "summary statistics based on to select AE",
                                                 c("risk difference", "odds ratio"), selected = "risk difference"),
+
+                                    # if user select to plot based on "odds ratio",
+                                    # provide the user option to specify the y-axis limit
+                                    uiOutput("HierORylimLB"),
+                                    uiOutput("HierORylimUB"),
+
                                     actionButton("HierplotInput", "Plot", width='100%'),
+
+                                    # show the text reminder to make sure that user run the model
+                                    # before they try to plot out the AEs
+                                    uiOutput("Hiermodelfirst"),
 
                                     # plot top AEs from the Hierrachical model
                                     plotOutput("Hierplot"),
+
+
+
+
+                                    uiOutput("Hierplotdown"),
 
                                     # download option for table of top AEs
                                     uiOutput("Hiertabledown")
@@ -168,7 +178,7 @@ ui <- fluidPage(
                            # since the simulation usually takes a long time,
                            # have a run button to make sure that the simulation
                            # only run after selecting all the parameter and hit the run button
-                           actionButton("HierInput", "Run", width = '100%'),
+                           actionButton("HierInput", "Run", width = '20%'),
                            br(),br(),
 
                            # Hierarchical model table output
