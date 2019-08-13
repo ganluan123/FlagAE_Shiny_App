@@ -86,7 +86,7 @@ server <- function(input, output) {
 
   ################################################################################
   ##############                                             #####################
-  ##############            Binomial CI plot                 #####################
+  ##############        Fisher exact test plot               #####################
   ##############                                             #####################
   ################################################################################
 
@@ -305,12 +305,12 @@ server <- function(input, output) {
   # show the warning if user try to plot before running model
   output$Hiermodelfirst<-renderUI({
     if(is.null(HierplotInput()) & !(input$HierplotInput==FALSE)) {
-      textOutput("HierModelfirstoutput")
+      textOutput("Modelfirstoutput")
       # span(textOutput("Modelfirstoutput"), style="color:red")
     }
   })
 
-  output$HierModelfirstoutput<-renderText({
+  output$Modelfirstoutput<-renderText({
     # if (!(is.null(HierplotInput()) & !(input$HierplotInput==FALSE))) return ()
     "Please run the model before plot"
   })
@@ -323,7 +323,7 @@ server <- function(input, output) {
   })
 
   output$Hierplotdownload <- downloadHandler(
-    filename <- function(){paste0("Hierplot_",input$Hierplotparam, ".jpeg")},
+    filename <- function(){paste0("Hireplot", ".jpeg")},
     content <- function(file) {
       #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
       #jpeg(file)
@@ -350,228 +350,6 @@ server <- function(input, output) {
     }
   )
 
-
-  ################################################################################
-  ##############                                             #####################
-  ##############           Ising Prior model                 #####################
-  ##############                                             #####################
-  ################################################################################
-
-
-  # show the table from the hierarchical model
-  # summary of the hierarchical model
-  # we DO NOT want the model to run each time user change the a single paramter
-  # we want the model to run after user finish changing all parameters
-  # and hit the run button
-
-  # the Isingv is to make sure that the plot and table will
-  # disappear and will not run before user click 'Run' button
-  Isingv <- reactiveValues(doPlot = FALSE)
-
-  observeEvent(input$IsingInput, {
-    # 0 will be coerced to FALSE
-    # 1+ will be coerced to TRUE
-    Isingv$doPlot <- input$IsingInput
-  })
-
-  observeEvent((input$IsingburnInput &
-                  input$IsingiterInput & input$IsingthinInput &
-                  input$alpha.input & input$beta.input &
-                  input$rho.input & input$theta.input
-  ), {
-    Isingv$doPlot <- FALSE
-  })
-
-
-
-  #run the model
-  Isingmodel<- function(){
-
-    if (Isingv$doPlot==FALSE ) return ()
-
-    isolate({
-
-      IsingData<-Ising(aedata=AEdata(), n_burn=input$IsingburnInput,
-                       n_iter=input$IsingiterInput, thin=input$IsingthinInput,
-                       beta.alpha =input$alpha.input, beta.beta = input$beta.input,
-                       rho=input$rho.input, theta=input$theta.input
-      )
-
-    })
-  }
-
-  # show the table
-  ISINGDATA<-reactive({
-    if (Isingv$doPlot==FALSE) return ()
-    Isingmodel()
-  })
-  output$Isingfulltable<-DT::renderDataTable({
-    ISINGDATA()
-  })
-
-  # table download option
-  output$Isingfulltabledown<-renderUI({
-    if (Isingv$doPlot==FALSE) return ()
-    downloadButton('Isingfulltabledownload', "Download the whole table")
-  })
-
-  output$Isingfulltabledownload<-downloadHandler(
-    filename <- function(){paste("Isingmodelfulltable", ".csv")},
-    content <-function(file){
-      write.csv(Isingmodel(), file, row.names = FALSE)
-    }
-  )
-
-  # show the Ising plot of top AEs
-  # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
-  output$IsingORylimLB<-renderUI({
-    if (input$Isingplotparam=="risk difference") return ()
-    numericInput("IsingORylimLBInput", "y-axis lower limit", value=0)
-  })
-
-  output$IsingORylimUB<-renderUI({
-    if (input$Isingplotparam=="risk difference") return ()
-    numericInput("IsingORylimUBInput", "y-axis upper limit", value=5)
-  })
-
-  IsingplotInput<-function(){
-    if (Isingv$doPlot==FALSE) return ()
-    if (input$IsingplotInput==FALSE) return()
-    isolate({
-      if (input$Isingplotparam=="risk difference"){
-        Isingplot(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam)
-      }
-      else {
-        Isingplot(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam,
-                  OR_ylim = c(input$IsingORylimLBInput, input$IsingORylimUBInput))
-      }
-    })
-
-  }
-
-  output$Isingplot<-renderPlot({
-    if(is.null(IsingplotInput())) return ()
-    if(input$IsingplotInput==FALSE) return ()
-    IsingplotInput()
-  })
-
-  # show the warning if user try to plot before running model
-  output$Isingmodelfirst<-renderUI({
-    if(is.null(IsingplotInput()) & !(input$IsingplotInput==FALSE)) {
-      textOutput("IsingModelfirstoutput")
-      # span(textOutput("Modelfirstoutput"), style="color:red")
-    }
-  })
-
-  output$IsingModelfirstoutput<-renderText({
-    # if (!(is.null(IsingplotInput()) & !(input$IsingplotInput==FALSE))) return ()
-    "Please run the model before plot"
-  })
-
-  # download option for Ising plot of top AEs
-  output$Isingplotdown<-renderUI({
-    if(!is.null(IsingplotInput()) & !(input$IsingplotInput==FALSE)){
-      downloadButton('Isingplotdownload', "Download the plot")
-    }
-  })
-
-  output$Isingplotdownload <- downloadHandler(
-    filename <- function(){paste0("Isingplot_",input$Isingplotparam ,".jpeg")},
-    content <- function(file) {
-      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      #jpeg(file)
-      ggsave(file, plot=IsingplotInput())
-    })
-
-
-  # download option for table containing information of AE in the plot
-  IsingtableInput<-function(){
-    if (Isingv$doPlot==FALSE) return ()
-    Isingtable(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam)
-  }
-
-  output$Isingtabledown<-renderUI({
-    if(is.null(IsingplotInput())) return ()
-    if(input$IsingplotInput==FALSE) return ()
-    downloadButton('Isingtabledownload', "Download table for details of AEs shown in plot")
-  })
-
-  output$Isingtabledownload<-downloadHandler(
-    filename <- function(){paste("Isingtable", ".csv")},
-    content <-function(file){
-      write.csv(IsingtableInput(), file, row.names = FALSE)
-    }
-  )
-
-  ################################################################################
-  ##############                                             #####################
-  ##############      Comparison of two models               #####################
-  ##############                                             #####################
-  ################################################################################
-
-  # compare by plotting
-  # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
-  output$HIORylimLB<-renderUI({
-    if (input$HIplotparam=="risk difference") return ()
-    numericInput("HIORylimLBInput", "y-axis lower limit", value=0)
-  })
-
-  output$HIORylimUB<-renderUI({
-    if (input$HIplotparam=="risk difference") return ()
-    numericInput("HIORylimUBInput", "y-axis upper limit", value=5)
-  })
-
-  # create the plot
-  HIplotInput<-function(){
-    if (Hierv$doPlot==FALSE) return ()
-    if (Isingv$doPlot==FALSE) return ()
-    if (input$HIplotInput==FALSE) return()
-    isolate({
-      if (input$HIplotparam=="risk difference"){
-        HIplot(hierdata=HIERDATA(), isingdata=ISINGDATA(), aedata=AEdata(), ptnum=input$HIplotptnum, param=input$HIplotparam)
-      }
-      else {
-        HIplot(hierdata=HIERDATA(), isingdata=ISINGDATA(), aedata=AEdata(), ptnum=input$HIplotptnum, param=input$HIplotparam,
-                 OR_ylim = c(input$HIORylimLBInput, input$HIORylimUBInput))
-      }
-    })
-
-  }
-
-  output$HIplot<-renderPlot({
-    if(is.null(HIplotInput())) return ()
-    if(input$HIplotInput==FALSE) return ()
-    HIplotInput()
-  })
-
-
-  # show the warning if user try to plot before running model
-  output$HImodelfirst<-renderUI({
-    if((Hierv$doPlot==FALSE | Isingv$doPlot==FALSE) & !(input$HIplotInput==FALSE)) {
-      textOutput("HIModelfirstoutput")
-      # span(textOutput("Modelfirstoutput"), style="color:red")
-    }
-  })
-
-  output$HIModelfirstoutput<-renderText({
-    # if (!(is.null(IsingplotInput()) & !(input$IsingplotInput==FALSE))) return ()
-    "Please run both models before plot"
-  })
-
-  # download option for plot of top AEs
-  output$HIplotdown<-renderUI({
-    if(!is.null(HIplotInput()) & !(input$HIplotInput==FALSE)){
-      downloadButton('Isingplotdownload', "Download the plot")
-    }
-  })
-
-  output$HIplotdownload <- downloadHandler(
-    filename <- function(){paste0("Hierarchical_Ising_plot_",input$Isingplotparam ,".jpeg")},
-    content <- function(file) {
-      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      #jpeg(file)
-      ggsave(file, plot=HIplotInput())
-  })
 
 
 
