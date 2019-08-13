@@ -36,7 +36,8 @@ ui <- fluidPage(
                               # summarizes the information in term of adverse events
                               # including number of occurances in treatment and control group
                               # also the index for SoC, and PT
-                              DT::dataTableOutput("AEdata")
+                              DT::dataTableOutput("AEdata"),
+                              uiOutput("AEdatatabledown")
                               ),
 
                   ################################################################################
@@ -94,8 +95,8 @@ ui <- fluidPage(
                                         tags$h4("Gibbs sampling paramters"),
                                     fluidRow(
                                       column(3,
-                                             numericInput("HieradaptInput", "Adaptation", value = 10),
-                                             numericInput("HierthinInput", "Thin", value = 2),
+                                             numericInput("HieradaptInput", "Adaptation", value = 200),
+                                             numericInput("HierthinInput", "Thin", value = 20),
                                              numericInput("alpha.theta.input",HTML("&alpha;<sub>&theta;</sub>") , value = 3),
                                              numericInput("mu.theta.0.0.input",HTML("&mu;<sub>&theta;00</sub>") , value = 0),
                                              numericInput("beta.gamma.input",HTML("&beta;<sub>&gamma;</sub>") , value = 1),
@@ -104,8 +105,8 @@ ui <- fluidPage(
 
                                              ),
                                       column(3,
-                                             numericInput("HierburnInput", "Burn In", value = 10),
-                                             numericInput("HierchainInput", "Chains", value = 2),
+                                             numericInput("HierburnInput", "Burn In", value = 200),
+                                             numericInput("HierchainInput", "Chains", value = 1),
                                              numericInput("mu.gamma.0.0.input",HTML("&mu;<sub>&gamma;00</sub>") , value = 0),
                                              numericInput("alpha.theta.0.0.input",HTML("&alpha;<sub>&theta;00</sub>") , value = 3),
                                              numericInput("beta.theta.input",HTML("&beta;<sub>&theta;</sub>") , value = 1),
@@ -114,7 +115,7 @@ ui <- fluidPage(
 
                                              ),
                                       column(3,
-                                             numericInput("HieriterInput", "Iterations", value = 10),
+                                             numericInput("HieriterInput", "Iterations", value = 1000),
                                              numericInput("alpha.gamma.input",HTML("&alpha;<sub>&gamma;</sub>") ,  value = 3),
                                              numericInput("alpha.gamma.0.0.input",HTML("&alpha;<sub>&gamma;00</sub>") , value = 3),
                                              numericInput("lambda.alpha.input",HTML("&lambda;<sub>&alpha;</sub>"), value = 0.1),
@@ -183,19 +184,31 @@ ui <- fluidPage(
                            fluidRow(
                            column(6,
                                   offset=0,
-                                  div(style='margin :0%;',
-                                      tags$h4("Gibbs sampling paramters and Hyperparameters"),
-                                      # Let user input the Gibbs sampling paramters
-                                      numericInput("IsingburnInput", "Burn In", value = 10),
-                                      numericInput("IsingiterInput", "Iterations", value = 10),
-                                      numericInput("IsingthinInput", "Thin", value = 2),
-                                      numericInput("alpha.input",HTML("&alpha;") , value = 0.25),
-                                      numericInput("beta.input", HTML("&beta;"), value = 0.75),
-                                      numericInput("rho.input", HTML("&rho;"), value = 1),
-                                      numericInput("theta.input", HTML("&theta;"), value = 0.02),
-                                      actionButton("IsingInput", "Run", width = '50%')
-                                  )
+                                  tags$h4("Gibbs sampling paramters and Hyperparameters"),
+                                  fluidRow(
+                                    column(3,
+                                           offset=0,
+                                           numericInput("IsingburnInput", "Burn In", value = 200),
+                                           numericInput("IsingthinInput", "Thin", value = 20),
+                                           numericInput("beta.input", HTML("&beta;"), value = 0.75),
+                                           numericInput("beta.t.input", HTML("&beta;<sup>t</sup>"), value = 0.75),
+                                           numericInput("beta.c.input", HTML("&beta;<sup>c</sup>"), value = 0.75),
+                                           numericInput("theta.input", HTML("&theta;"), value = 0.02)
+                                           
+                                           ),
+                                    column(3,
+                                           offset=0,
+                                           numericInput("IsingiterInput", "Iterations", value = 1000),
+                                           numericInput("alpha.input",HTML("&alpha;") , value = 0.25),
+                                           numericInput("alpha.t.input",HTML("&alpha;<sup>t</sup>") , value = 0.25),
+                                           numericInput("alpha.c.input",HTML("&alpha;<sup>c</sup>") , value = 0.25),
+                                           numericInput("rho.input", HTML("&rho;"), value = 1)
+                                           )
+                                  ),
+                                  actionButton("IsingInput", "Run", width = '50%')
                            ),
+                           
+                           
 
 
                            column(6,
@@ -287,6 +300,7 @@ ui <- fluidPage(
                                         tags$h4("compare by cross validation"),
                                         numericInput("CVkfdInput", "k value for k-fold cross validation", value=5),
                                         actionButton("CVInput", "Run", width='50%'),
+                                        br(),br(),
                                         DT::dataTableOutput("CVlosstable"),
                                         # download option for table of Loss
                                         uiOutput("CVtabledown")

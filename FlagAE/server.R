@@ -81,7 +81,20 @@ server <- function(input, output) {
 
     caption = "Adverse event summary"
 
-    )
+  )
+  
+  # create the download option for user to download the table
+  output$AEdatatabledown<-renderUI({
+    if(!(is.null(AEdata()))){
+      downloadButton('AEdatatabledownload', "Download the table")
+    }
+  })
+  
+  output$AEdatatabledownload<-downloadHandler(
+    filename = function(){paste("AEdata", ".csv")},
+    content =function(file){
+      write.csv(AEdata(), file, row.names = FALSE)
+    })
 
 
   ################################################################################
@@ -382,6 +395,8 @@ server <- function(input, output) {
   observeEvent((input$IsingburnInput &
                   input$IsingiterInput & input$IsingthinInput &
                   input$alpha.input & input$beta.input &
+                  input$alpha.t.input & input$beta.t.input &
+                  input$alpha.c.input & input$beta.c.input &
                   input$rho.input & input$theta.input
   ), {
     Isingv$doPlot <- FALSE
@@ -400,7 +415,9 @@ server <- function(input, output) {
 
       IsingData<-Ising(aedata=AEdata(), n_burn=input$IsingburnInput,
                        n_iter=input$IsingiterInput, thin=input$IsingthinInput,
-                       beta.alpha =input$alpha.input, beta.beta = input$beta.input,
+                       alpha =input$alpha.input, beta = input$beta.input,
+                       alpha.t =input$alpha.t.input, beta.t = input$beta.t.input,
+                       alpha.c =input$alpha.c.input, beta.c = input$beta.c.input,
                        rho=input$rho.input, theta=input$theta.input)
 
     })
@@ -632,7 +649,9 @@ server <- function(input, output) {
 
     CVLOSSISING<-CVising(AElist=CVAELIST, n_burn=input$IsingburnInput,
                        n_iter=input$IsingiterInput, thin=input$IsingthinInput,
-                       beta.alpha =input$alpha.input, beta.beta = input$beta.input,
+                       alpha =input$alpha.input, beta = input$beta.input,
+                       alpha.t =input$alpha.t.input, beta.t = input$beta.t.input,
+                       alpha.c =input$alpha.c.input, beta.c = input$beta.c.input,
                        rho=input$rho.input, theta=input$theta.input)
 
     data.frame(row.names = c("Train_Loss", "Test_Loss"), Hierachical_Model=c(CVLOSSHIER$trainloss, CVLOSSHIER$testloss),
