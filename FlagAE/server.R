@@ -8,8 +8,8 @@ library(ggplot2)
 
 #####################################################################################################
 #######################################################################################################
-ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
-ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
+# ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
+# ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
 
 #######################################################################################################
 #######################################################################################################
@@ -22,42 +22,42 @@ server <- function(input, output) {
   ##############                                             #####################
   ################################################################################
 
-  AEdata<-function(){
-   preprocess(adsl=ADSL, adae=ADAE)
-  }
+  # AEdata<-function(){
+  #  preprocess(adsl=ADSL, adae=ADAE)
+  # }
 
 
 #######################################################################################################
 #######################################################################################################
-#   # get the ADSL.csv
-#   # ADSL is a reactive variable
-#   ADSL<-reactive({
-#     ADSLread<-input$ADSLInput
-#     if (is.null(ADSLread))
-#       return(NULL)
-#     read.csv(ADSLread$datapath, header=TRUE)
-#   })
-#
-#   # get the ADAE.csv
-#   # ADAE is a reactive variable
-#   ADAE<-reactive({
-#     ADAEread<-input$ADAEInput
-#     if (is.null(ADAEread))
-#       return(NULL)
-#     read.csv(ADAEread$datapath, header=TRUE)
-#   })
-#
-#   # get the AEdata from preprocess4 function in libarary FlagAE
-#   AEdata<-reactive({
-#
-#     ADSLread<-input$ADSLInput
-#     ADAEread<-input$ADAEInput
-#     if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
-#
-#     preprocess(adsl=ADSL(), adae=ADAE())
-#   })
-#
-#
+  # get the ADSL.csv
+  # ADSL is a reactive variable
+  ADSL<-reactive({
+    ADSLread<-input$ADSLInput
+    if (is.null(ADSLread))
+      return(NULL)
+    read.csv(ADSLread$datapath, header=TRUE)
+  })
+
+  # get the ADAE.csv
+  # ADAE is a reactive variable
+  ADAE<-reactive({
+    ADAEread<-input$ADAEInput
+    if (is.null(ADAEread))
+      return(NULL)
+    read.csv(ADAEread$datapath, header=TRUE)
+  })
+
+  # get the AEdata from preprocess4 function in libarary FlagAE
+  AEdata<-reactive({
+
+    ADSLread<-input$ADSLInput
+    ADAEread<-input$ADAEInput
+    if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
+
+    preprocess(adsl=ADSL(), adae=ADAE())
+  })
+
+
 # ###############################################################################################################
 # ###############################################################################################################
   # output subject and adverse event summary
@@ -204,6 +204,9 @@ server <- function(input, output) {
   # disappear and will not run before user click 'Run' button
   Hierv <- reactiveValues(doPlot = FALSE)
 
+  # also initiate this for cross validation
+  CVv <- reactiveValues(doPlot = FALSE)
+
   observeEvent(input$HierInput, {
     # 0 will be coerced to FALSE
     # 1+ will be coerced to TRUE
@@ -222,6 +225,8 @@ server <- function(input, output) {
                   input$tau.theta.0.0.input & input$beta.theta.0.0.input &
                   input$lambda.beta.input), {
     Hierv$doPlot <- FALSE
+    # also update for Cross validation calculation
+    CVv$doPlot <- FALSE
   })
 
 
@@ -380,6 +385,8 @@ server <- function(input, output) {
                   input$rho.input & input$theta.input
   ), {
     Isingv$doPlot <- FALSE
+    # also update for Cross validation calculation
+    CVv$doPlot <- FALSE
   })
 
 
@@ -394,8 +401,7 @@ server <- function(input, output) {
       IsingData<-Ising(aedata=AEdata(), n_burn=input$IsingburnInput,
                        n_iter=input$IsingiterInput, thin=input$IsingthinInput,
                        beta.alpha =input$alpha.input, beta.beta = input$beta.input,
-                       rho=input$rho.input, theta=input$theta.input
-      )
+                       rho=input$rho.input, theta=input$theta.input)
 
     })
   }
@@ -509,6 +515,8 @@ server <- function(input, output) {
   ##############                                             #####################
   ################################################################################
 
+  ###############################################################################
+  ###############################################################################
   # compare by plotting
   # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
   output$HIORylimLB<-renderUI({
@@ -561,17 +569,99 @@ server <- function(input, output) {
   # download option for plot of top AEs
   output$HIplotdown<-renderUI({
     if(!is.null(HIplotInput()) & !(input$HIplotInput==FALSE)){
-      downloadButton('Isingplotdownload', "Download the plot")
+      downloadButton('HIplotdownload', "Download the plot")
     }
   })
 
   output$HIplotdownload <- downloadHandler(
-    filename <- function(){paste0("Hierarchical_Ising_plot_",input$Isingplotparam ,".jpeg")},
+    filename <- function(){paste0("Hierarchical_Ising_plot_",input$HIplotparam ,".jpeg")},
     content <- function(file) {
-      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      #jpeg(file)
       ggsave(file, plot=HIplotInput())
   })
+
+  # download option for table containing information of AE in the plot
+  HItableInput<-function(){
+    if (Hierv$doPlot==FALSE) return ()
+    if (Isingv$doPlot==FALSE) return ()
+    if (input$HIplotInput==FALSE) return()
+    HItable(hierdata=HIERDATA(),isingdata=ISINGDATA(), ptnum=input$HIplotptnum, param=input$HIplotparam)
+  }
+
+  output$HItabledown<-renderUI({
+    if(is.null(HIplotInput())) return ()
+    if(input$HIplotInput==FALSE) return ()
+    downloadButton('HItabledownload', "Download table for details of AEs shown in plot")
+  })
+
+  output$HItabledownload<-downloadHandler(
+    filename <- function(){paste("Hier_Ising_table", ".csv")},
+    content <-function(file){
+      write.csv(HItableInput(), file, row.names = FALSE)
+    }
+  )
+
+  ###############################################################################
+  ###############################################################################
+
+
+  observeEvent(input$CVInput, {
+    # 0 will be coerced to FALSE
+    # 1+ will be coerced to TRUE
+    CVv$doPlot <- input$CVInput
+  })
+
+  observeEvent((input$CVkfdInput), {
+    CVv$doPlot <- FALSE
+  })
+
+
+  CVtableInput<-reactive({
+    if (CVv$doPlot==0 ) return ()
+    CVAELIST<-kfdpar(ADSL(), ADAE(), k=input$CVkfdInput)
+
+    CVLOSSHIER<-CVhier(AElist=CVAELIST, n_burn=input$HierburnInput,
+                     n_iter=input$HieriterInput, thin=input$HierthinInput, n_adapt = input$HieradaptInput,
+                     n_chain = input$HierchainInput,
+                     alpha.gamma =input$alpha.gamma.input, beta.gamma = input$beta.gamma.input,
+                     alpha.theta = input$alpha.theta.input, beta.theta = input$beta.theta.input,
+                     mu.gamma.0.0 = input$mu.gamma.0.0.input, tau.gamma.0.0 = input$tau.gamma.0.0.input,
+                     alpha.gamma.0.0 = input$alpha.gamma.0.0.input, beta.gamma.0.0 = input$beta.gamma.0.0.input,
+                     lambda.alpha = input$lambda.alpha.input, lambda.beta = input$lambda.beta.input,
+                     mu.theta.0.0 = input$mu.theta.0.0.input, tau.theta.0.0 = input$tau.theta.0.0.input,
+                     alpha.theta.0.0 = input$alpha.theta.0.0.input, beta.theta.0.0 = input$beta.theta.0.0.input)
+
+    CVLOSSISING<-CVising(AElist=CVAELIST, n_burn=input$IsingburnInput,
+                       n_iter=input$IsingiterInput, thin=input$IsingthinInput,
+                       beta.alpha =input$alpha.input, beta.beta = input$beta.input,
+                       rho=input$rho.input, theta=input$theta.input)
+
+    data.frame(row.names = c("Train_Loss", "Test_Loss"), Hierachical_Model=c(CVLOSSHIER$trainloss, CVLOSSHIER$testloss),
+               Ising_Model=c(CVLOSSISING$trainloss, CVLOSSISING$testloss))
+  })
+
+  output$CVlosstable<-DT::renderDataTable({
+    CVtableInput()
+  },
+  caption = "Cross Validation Loss of Two Models"
+  )
+
+  output$CVtabledown<-renderUI({
+    if(is.null(CVtableInput())) return ()
+
+    downloadButton('CVtabledownload', "Download table of cross validation loss")
+  })
+
+  output$CVtabledownload<-downloadHandler(
+    filename <- function(){paste("CVLoss", ".csv")},
+    content <-function(file){
+      write.csv(CVtableInput(), file, row.names = FALSE)
+    }
+  )
+
+
+
+
+
 
 
 

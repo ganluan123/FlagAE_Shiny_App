@@ -284,7 +284,13 @@ ui <- fluidPage(
                              column(6,
                                     offset=0,
                                     div(style='margin:0%;',
-                                        tags$h4("compare by cross validation")
+                                        tags$h4("compare by cross validation"),
+                                        numericInput("CVkfdInput", "k value for k-fold cross validation", value=5),
+                                        actionButton("CVInput", "Run", width='50%'),
+                                        DT::dataTableOutput("CVlosstable"),
+                                        # download option for table of Loss
+                                        uiOutput("CVtabledown")
+
 
                                         ))
                            ))
