@@ -2,15 +2,19 @@ library(shiny)
 ui <- fluidPage(
 
   # enter the title
-  titlePanel(title="Flag Adverse Event with Bayesian Methods"),
+  titlePanel(title="Flag Adverse Event"),
 
   # create the layout
   sidebarLayout(
     sidebarPanel(width=2,
       # ADSL input
       fileInput("ADSLInput", "Please upload ADSL file"),
+      # reminder about ADSL dataset
+      # textOutput("ADSLreminder"),
       # ADAE input
       fileInput("ADAEInput", "Please upload ADAE file")
+      # reminder about ADAE dataset
+      # textOutput("ADAEreminder")
 
     ),
 
@@ -24,7 +28,7 @@ ui <- fluidPage(
                   ##############                                             #####################
                   ################################################################################
 
-                    tabPanel ("Adverse Event Summary",
+                    tabPanel ("Summary",
                               # "AE summary" is to get the summary information
                               # of the dataset, including how many patients in
                               # control group, in treatment group, number of SoC
@@ -86,13 +90,18 @@ ui <- fluidPage(
                   ################################################################################
 
 
-                  tabPanel("Three Stage Hierarchical Model",
+                  tabPanel("Hierarchical Model",
+
+
 
                            fluidRow(
                              column(9,
                                     offset=0,
 
-                                        tags$h4("Gibbs sampling paramters"),
+                                        tags$h4("Gibbs sampling paramters and Hyperparameters"),
+                                        br(),
+                                        uiOutput("Hierpaperlink"),
+                                        br(),
                                     fluidRow(
                                       column(3,
                                              numericInput("HieradaptInput", "Adaptation", value = 200),
@@ -139,8 +148,8 @@ ui <- fluidPage(
 
                                     # if user select to plot based on "odds ratio",
                                     # provide the user option to specify the y-axis limit
-                                    uiOutput("HierORylimLB"),
-                                    uiOutput("HierORylimUB"),
+                                    uiOutput("HierORxlimLB"),
+                                    uiOutput("HierORxlimUB"),
 
                                     actionButton("HierplotInput", "Plot", width='65%'),
 
@@ -185,6 +194,9 @@ ui <- fluidPage(
                            column(6,
                                   offset=0,
                                   tags$h4("Gibbs sampling paramters and Hyperparameters"),
+                                  br(),
+                                  uiOutput("Isingpaperlink"),
+                                  br(),
                                   fluidRow(
                                     column(3,
                                            offset=0,
@@ -194,7 +206,7 @@ ui <- fluidPage(
                                            numericInput("beta.t.input", HTML("&beta;<sup>t</sup>"), value = 0.75),
                                            numericInput("beta.c.input", HTML("&beta;<sup>c</sup>"), value = 0.75),
                                            numericInput("theta.input", HTML("&theta;"), value = 0.02)
-                                           
+
                                            ),
                                     column(3,
                                            offset=0,
@@ -207,8 +219,8 @@ ui <- fluidPage(
                                   ),
                                   actionButton("IsingInput", "Run", width = '50%')
                            ),
-                           
-                           
+
+
 
 
                            column(6,
@@ -222,8 +234,8 @@ ui <- fluidPage(
 
                                       # if user select to plot based on "odds ratio",
                                       # provide the user option to specify the y-axis limit
-                                      uiOutput("IsingORylimLB"),
-                                      uiOutput("IsingORylimUB"),
+                                      uiOutput("IsingORxlimLB"),
+                                      uiOutput("IsingORxlimUB"),
 
                                       actionButton("IsingplotInput", "Plot", width='50%'),
 
@@ -262,7 +274,7 @@ ui <- fluidPage(
                   ##############                                             #####################
                   ################################################################################
 
-                  tabPanel("Comparison of two models",
+                  tabPanel("Model Comparison",
                            fluidRow(
                              column(6,
                                     offset=0,
@@ -274,8 +286,8 @@ ui <- fluidPage(
 
                                         # if user select to plot based on "odds ratio",
                                         # provide the user option to specify the y-axis limit
-                                        uiOutput("HIORylimLB"),
-                                        uiOutput("HIORylimUB"),
+                                        uiOutput("HIORxlimLB"),
+                                        uiOutput("HIORxlimUB"),
 
                                         actionButton("HIplotInput", "Plot", width='50%'),
 

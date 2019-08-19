@@ -38,6 +38,11 @@ server <- function(input, output) {
     read.csv(ADSLread$datapath, header=TRUE)
   })
 
+  # # reminder about ADSL dataset
+  # output$ADSLreminder<-renderText({
+  #   "ADSL should containing the following columns: "
+  # })
+
   # get the ADAE.csv
   # ADAE is a reactive variable
   ADAE<-reactive({
@@ -46,6 +51,11 @@ server <- function(input, output) {
       return(NULL)
     read.csv(ADAEread$datapath, header=TRUE)
   })
+
+  # # reminder about ADSL dataset
+  # output$ADAEreminder<-renderText({
+  #   "ADAE should containing the following columns: "
+  # })
 
   # get the AEdata from preprocess4 function in libarary FlagAE
   AEdata<-reactive({
@@ -77,19 +87,22 @@ server <- function(input, output) {
   output$AEdata<-DT::renderDataTable({
     if (is.null(AEdata())) return ()
 
-    AEdata() },
+    drops<-c("b", "i", "j")
+    AEdata() [, !names(AEdata()) %in% drops]
+
+    },
 
     caption = "Adverse event summary"
 
   )
-  
+
   # create the download option for user to download the table
   output$AEdatatabledown<-renderUI({
     if(!(is.null(AEdata()))){
       downloadButton('AEdatatabledownload', "Download the table")
     }
   })
-  
+
   output$AEdatatabledownload<-downloadHandler(
     filename = function(){paste("AEdata", ".csv")},
     content =function(file){
@@ -109,12 +122,12 @@ server <- function(input, output) {
   # take PTnumInput and confInput if user select to plot out Fisher Exact Test Plot
   output$PTnumInput<-renderUI({
     #if(input$BCIInput==FALSE ) return (NULL)
-    numericInput("PTnumInput", "Insert the number of adverse events to show", value = 10)
+    numericInput("PTnumInput", "number of adverse events to show", value = 10)
   })
 
   output$confInput<-renderUI({
     #if(input$BCIInput==FALSE)  return (NULL)
-    numericInput("confInput", "Insert the confidence level for fisher exact test",
+    numericInput("confInput", "confidence level for Binomial CI",
                                value = 0.95, min=0, max=1, step = 0.025)
   })
 
@@ -164,10 +177,10 @@ server <- function(input, output) {
   output$BCIplotdownloadjpeg <- downloadHandler(
     filename <- "BCIplot.jpeg",
     content <- function(file) {
-      jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      # jpeg(file)
-      BCIplotInput()
-      dev.off()
+      # jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
+      # BCIplotInput()
+      # dev.off()
+      ggsave(file, plot=BCIplotInput())
   })
 
 
@@ -212,6 +225,14 @@ server <- function(input, output) {
   # we DO NOT want the model to run each time user change the a single paramter
   # we want the model to run after user finish changing all parameters
   # and hit the run button
+
+  # link for original paper
+  Hierpaperurl<-a(tags$h4("Click here for detailed model information (Check model 1b)")
+                  , href="https://onlinelibrary.wiley.com/doi/full/10.1111/j.0006-341X.2004.00186.x?sid=nlm%3Apubmed")
+
+  output$Hierpaperlink<-renderUI({
+    tagList(Hierpaperurl)
+  })
 
   # the Hierv is to make sure that the plot and table will
   # disappear and will not run before user click 'Run' button
@@ -271,7 +292,10 @@ server <- function(input, output) {
     Hiermodel()
   })
   output$Hierfulltable<-DT::renderDataTable({
-    HIERDATA()
+
+    drops<-c("b", "i", "j")
+    HIERDATA() [, !names(HIERDATA()) %in% drops]
+
   })
 
   # table download option
@@ -283,20 +307,22 @@ server <- function(input, output) {
   output$Hierfulltabledownload<-downloadHandler(
     filename <- function(){paste("Hiermodelfulltable", ".csv")},
     content <-function(file){
-      write.csv(Hiermodel(), file, row.names = FALSE)
+      #write.csv(Hiermodel(), file, row.names = FALSE)
+      drops<-c("b", "i", "j")
+      write.csv(Hiermodel()[, !names(Hiermodel()) %in% drops], file, row.names = FALSE)
     }
   )
 
   # show the Hier plot of top AEs
   # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
-  output$HierORylimLB<-renderUI({
+  output$HierORxlimLB<-renderUI({
     if (input$Hierplotparam=="risk difference") return ()
-    numericInput("HierORylimLBInput", "y-axis lower limit", value=0)
+    numericInput("HierORxlimLBInput", "x-axis lower limit", value=0)
   })
 
-  output$HierORylimUB<-renderUI({
+  output$HierORxlimUB<-renderUI({
     if (input$Hierplotparam=="risk difference") return ()
-    numericInput("HierORylimUBInput", "y-axis upper limit", value=5)
+    numericInput("HierORxlimUBInput", "x-axis upper limit", value=5)
   })
 
   HierplotInput<-function(){
@@ -308,7 +334,7 @@ server <- function(input, output) {
       }
       else {
         Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam,
-                 OR_ylim = c(input$HierORylimLBInput, input$HierORylimUBInput))
+                 OR_xlim = c(input$HierORxlimLBInput, input$HierORxlimUBInput))
       }
     })
 
@@ -364,7 +390,8 @@ server <- function(input, output) {
   output$Hiertabledownload<-downloadHandler(
     filename <- function(){paste("Hiertable", ".csv")},
     content <-function(file){
-      write.csv(HiertableInput(), file, row.names = FALSE)
+      drops<-c("b", "i", "j")
+      write.csv(HiertableInput()[,!names(HiertableInput()) %in% drops ], file, row.names = FALSE)
     }
   )
 
@@ -374,6 +401,14 @@ server <- function(input, output) {
   ##############           Ising Prior model                 #####################
   ##############                                             #####################
   ################################################################################
+
+  # link for original paper
+  Isingpaperurl<-a(tags$h4("Click here for detailed model information")
+                  , href="https://onlinelibrary.wiley.com/doi/full/10.1111/biom.12051")
+
+  output$Isingpaperlink<-renderUI({
+    tagList(Isingpaperurl)
+  })
 
 
   # show the table from the hierarchical model
@@ -415,7 +450,7 @@ server <- function(input, output) {
 
       IsingData<-Ising(aedata=AEdata(), n_burn=input$IsingburnInput,
                        n_iter=input$IsingiterInput, thin=input$IsingthinInput,
-                       alpha =input$alpha.input, beta = input$beta.input,
+                       alpha_ =input$alpha.input, beta_ = input$beta.input,
                        alpha.t =input$alpha.t.input, beta.t = input$beta.t.input,
                        alpha.c =input$alpha.c.input, beta.c = input$beta.c.input,
                        rho=input$rho.input, theta=input$theta.input)
@@ -429,7 +464,8 @@ server <- function(input, output) {
     Isingmodel()
   })
   output$Isingfulltable<-DT::renderDataTable({
-    ISINGDATA()
+    drops<-c("b", "i", "j")
+    ISINGDATA()[,!names(ISINGDATA()) %in% drops ]
   })
 
   # table download option
@@ -447,14 +483,14 @@ server <- function(input, output) {
 
   # show the Ising plot of top AEs
   # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
-  output$IsingORylimLB<-renderUI({
+  output$IsingORxlimLB<-renderUI({
     if (input$Isingplotparam=="risk difference") return ()
-    numericInput("IsingORylimLBInput", "y-axis lower limit", value=0)
+    numericInput("IsingORxlimLBInput", "x-axis lower limit", value=0)
   })
 
-  output$IsingORylimUB<-renderUI({
+  output$IsingORxlimUB<-renderUI({
     if (input$Isingplotparam=="risk difference") return ()
-    numericInput("IsingORylimUBInput", "y-axis upper limit", value=5)
+    numericInput("IsingORxlimUBInput", "x-axis upper limit", value=5)
   })
 
   IsingplotInput<-function(){
@@ -466,7 +502,7 @@ server <- function(input, output) {
       }
       else {
         Isingplot(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam,
-                  OR_ylim = c(input$IsingORylimLBInput, input$IsingORylimUBInput))
+                  OR_xlim = c(input$IsingORxlimLBInput, input$IsingORxlimUBInput))
       }
     })
 
@@ -501,8 +537,6 @@ server <- function(input, output) {
   output$Isingplotdownload <- downloadHandler(
     filename <- function(){paste0("Isingplot_",input$Isingplotparam ,".jpeg")},
     content <- function(file) {
-      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      #jpeg(file)
       ggsave(file, plot=IsingplotInput())
     })
 
@@ -522,7 +556,8 @@ server <- function(input, output) {
   output$Isingtabledownload<-downloadHandler(
     filename <- function(){paste("Isingtable", ".csv")},
     content <-function(file){
-      write.csv(IsingtableInput(), file, row.names = FALSE)
+      drops<-c("b", "i", "j")
+      write.csv(IsingtableInput()[,!names(IsingtableInput()) %in% drops ], file, row.names = FALSE)
     }
   )
 
@@ -536,14 +571,14 @@ server <- function(input, output) {
   ###############################################################################
   # compare by plotting
   # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
-  output$HIORylimLB<-renderUI({
+  output$HIORxlimLB<-renderUI({
     if (input$HIplotparam=="risk difference") return ()
-    numericInput("HIORylimLBInput", "y-axis lower limit", value=0)
+    numericInput("HIORxlimLBInput", "y-axis lower limit", value=0)
   })
 
-  output$HIORylimUB<-renderUI({
+  output$HIORxlimUB<-renderUI({
     if (input$HIplotparam=="risk difference") return ()
-    numericInput("HIORylimUBInput", "y-axis upper limit", value=5)
+    numericInput("HIORxlimUBInput", "y-axis upper limit", value=5)
   })
 
   # create the plot
@@ -557,7 +592,7 @@ server <- function(input, output) {
       }
       else {
         HIplot(hierdata=HIERDATA(), isingdata=ISINGDATA(), aedata=AEdata(), ptnum=input$HIplotptnum, param=input$HIplotparam,
-                 OR_ylim = c(input$HIORylimLBInput, input$HIORylimUBInput))
+                 OR_xlim = c(input$HIORxlimLBInput, input$HIORxlimUBInput))
       }
     })
 
@@ -635,6 +670,7 @@ server <- function(input, output) {
   CVtableInput<-reactive({
     if (CVv$doPlot==0 ) return ()
     CVAELIST<-kfdpar(ADSL(), ADAE(), k=input$CVkfdInput)
+    # CVAELIST<-kfdpar(ADSL, ADAE, k=input$CVkfdInput)
 
     CVLOSSHIER<-CVhier(AElist=CVAELIST, n_burn=input$HierburnInput,
                      n_iter=input$HieriterInput, thin=input$HierthinInput, n_adapt = input$HieradaptInput,
@@ -649,13 +685,14 @@ server <- function(input, output) {
 
     CVLOSSISING<-CVising(AElist=CVAELIST, n_burn=input$IsingburnInput,
                        n_iter=input$IsingiterInput, thin=input$IsingthinInput,
-                       alpha =input$alpha.input, beta = input$beta.input,
+                       alpha_ =input$alpha.input, beta_ = input$beta.input,
                        alpha.t =input$alpha.t.input, beta.t = input$beta.t.input,
                        alpha.c =input$alpha.c.input, beta.c = input$beta.c.input,
                        rho=input$rho.input, theta=input$theta.input)
 
-    data.frame(row.names = c("Train_Loss", "Test_Loss"), Hierachical_Model=c(CVLOSSHIER$trainloss, CVLOSSHIER$testloss),
+    LOSSTABLE<-data.frame(row.names = c("Train_Loss", "Test_Loss"), Hierachical_Model=c(CVLOSSHIER$trainloss, CVLOSSHIER$testloss),
                Ising_Model=c(CVLOSSISING$trainloss, CVLOSSISING$testloss))
+    round(LOSSTABLE,4)
   })
 
   output$CVlosstable<-DT::renderDataTable({
