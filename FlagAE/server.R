@@ -8,8 +8,8 @@ library(ggplot2)
 
 #####################################################################################################
 #######################################################################################################
-# ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
-# ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
+ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
+ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
 
 #######################################################################################################
 #######################################################################################################
@@ -22,51 +22,51 @@ server <- function(input, output) {
   ##############                                             #####################
   ################################################################################
 
-  # AEdata<-function(){
-  #  preprocess(adsl=ADSL, adae=ADAE)
-  # }
+  AEdata<-function(){
+   preprocess(adsl=ADSL, adae=ADAE)
+  }
 
 
 #######################################################################################################
 #######################################################################################################
-  # get the ADSL.csv
-  # ADSL is a reactive variable
-  ADSL<-reactive({
-    ADSLread<-input$ADSLInput
-    if (is.null(ADSLread))
-      return(NULL)
-    read.csv(ADSLread$datapath, header=TRUE)
-  })
-
-  # # reminder about ADSL dataset
-  # output$ADSLreminder<-renderText({
-  #   "ADSL should containing the following columns: "
+  # # get the ADSL.csv
+  # # ADSL is a reactive variable
+  # ADSL<-reactive({
+  #   ADSLread<-input$ADSLInput
+  #   if (is.null(ADSLread))
+  #     return(NULL)
+  #   read.csv(ADSLread$datapath, header=TRUE)
   # })
-
-  # get the ADAE.csv
-  # ADAE is a reactive variable
-  ADAE<-reactive({
-    ADAEread<-input$ADAEInput
-    if (is.null(ADAEread))
-      return(NULL)
-    read.csv(ADAEread$datapath, header=TRUE)
-  })
-
-  # # reminder about ADSL dataset
-  # output$ADAEreminder<-renderText({
-  #   "ADAE should containing the following columns: "
+  #
+  # # # reminder about ADSL dataset
+  # # output$ADSLreminder<-renderText({
+  # #   "ADSL should containing the following columns: "
+  # # })
+  #
+  # # get the ADAE.csv
+  # # ADAE is a reactive variable
+  # ADAE<-reactive({
+  #   ADAEread<-input$ADAEInput
+  #   if (is.null(ADAEread))
+  #     return(NULL)
+  #   read.csv(ADAEread$datapath, header=TRUE)
   # })
-
-  # get the AEdata from preprocess4 function in libarary FlagAE
-  AEdata<-reactive({
-
-    ADSLread<-input$ADSLInput
-    ADAEread<-input$ADAEInput
-    if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
-
-    preprocess(adsl=ADSL(), adae=ADAE())
-  })
-
+  #
+  # # # reminder about ADSL dataset
+  # # output$ADAEreminder<-renderText({
+  # #   "ADAE should containing the following columns: "
+  # # })
+  #
+  # # get the AEdata from preprocess4 function in libarary FlagAE
+  # AEdata<-reactive({
+  #
+  #   ADSLread<-input$ADSLInput
+  #   ADAEread<-input$ADAEInput
+  #   if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
+  #
+  #   preprocess(adsl=ADSL(), adae=ADAE())
+  # })
+  #
 
 # ###############################################################################################################
 # ###############################################################################################################
@@ -80,8 +80,50 @@ server <- function(input, output) {
     df<-data.frame(Item=Item, Number=Number)
     },
     caption = "Subject and adverse event summary"
-
     )
+
+  output$preplottext<-renderText({
+    if (!(is.null(AEdata()))) "Plot of risk difference/odds ratio from raw data"
+  })
+
+
+  # take PTnumpreplot and parampreplot
+  output$PTnumpreplot<-renderUI({
+    if (is.null (AEdata())) return ()
+    numericInput("PTnumpreplot", "number of adverse events to show", value = 50)
+  })
+
+  output$parampreplot<-renderUI({
+    if (is.null (AEdata())) return ()
+    selectInput("parampreplot", "summary statistics based on to plot",
+                c("risk difference", "odds ratio"), selected = "risk difference")
+  })
+
+  # creat the plot from fucntion preplot
+  preplotInput<-function(){
+    if (!(is.null(AEdata()))){
+      preplot(aedata=AEdata(), ptnum=input$PTnumpreplot, param=input$parampreplot)
+    }
+  }
+
+  # plot out the plot
+  output$PREplot<-renderPlot({
+    if(is.null(AEdata()) | is.null(input$parampreplot) | is.null(input$PTnumpreplot)) return ()
+    preplotInput()
+  })
+
+  # download option
+  output$PREplotdownjpeg<-renderUI({
+    if(!(is.null(AEdata()))){
+      downloadButton('PREplotdownloadjpeg', "Download the plot")
+    }
+  })
+
+  output$PREplotdownloadjpeg <- downloadHandler(
+    filename <- paste0("preplot_with_",input$parampreplot,".jpeg"),
+    content <- function(file) {
+      ggsave(file, plot=preplotInput())
+    })
 
   # output the adverse event summary
   output$AEdata<-DT::renderDataTable({
@@ -89,11 +131,8 @@ server <- function(input, output) {
 
     drops<-c("b", "i", "j")
     AEdata() [, !names(AEdata()) %in% drops]
-
     },
-
     caption = "Adverse event summary"
-
   )
 
   # create the download option for user to download the table
@@ -669,8 +708,8 @@ server <- function(input, output) {
 
   CVtableInput<-reactive({
     if (CVv$doPlot==0 ) return ()
-    CVAELIST<-kfdpar(ADSL(), ADAE(), k=input$CVkfdInput)
-    # CVAELIST<-kfdpar(ADSL, ADAE, k=input$CVkfdInput)
+    # CVAELIST<-kfdpar(ADSL(), ADAE(), k=input$CVkfdInput)
+    CVAELIST<-kfdpar(ADSL, ADAE, k=input$CVkfdInput)
 
     CVLOSSHIER<-CVhier(AElist=CVAELIST, n_burn=input$HierburnInput,
                      n_iter=input$HieriterInput, thin=input$HierthinInput, n_adapt = input$HieradaptInput,

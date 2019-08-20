@@ -36,6 +36,26 @@ ui <- fluidPage(
                               DT::dataTableOutput("AEsummary"),
                               br(), br(),
 
+                              # number of AE and parameter for preplot
+                              fluidRow(
+                                textOutput("preplottext"),
+                                tags$head(tags$style("#preplottext{
+                                                      font-size: 20px;
+                                                     font-style: bold;
+                                                     }")),
+                                column(width=4, offset=0,
+                                       uiOutput("PTnumpreplot")
+                                       ),
+                                column(width=4, offset = 0,
+                                       uiOutput("parampreplot")
+                                       )
+                              ),
+                              plotOutput("PREplot"),
+                              uiOutput("PREplotdownjpeg"),
+                              br(), br(),
+
+
+
                               # "AEdata" is the output from preprocess4 which
                               # summarizes the information in term of adverse events
                               # including number of occurances in treatment and control group
@@ -134,8 +154,6 @@ ui <- fluidPage(
                                     ),
                                     actionButton("HierInput", "Run", width = '75%')
                                     ),
-
-
 
 
                              column(3,
