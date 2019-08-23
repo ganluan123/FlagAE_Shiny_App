@@ -10,11 +10,11 @@ ui <- fluidPage(
       # ADSL input
       fileInput("ADSLInput", "Please upload ADSL file"),
       # reminder about ADSL dataset
-      # textOutput("ADSLreminder"),
+      uiOutput("ADSLreminder"),
       # ADAE input
-      fileInput("ADAEInput", "Please upload ADAE file")
+      fileInput("ADAEInput", "Please upload ADAE file"),
       # reminder about ADAE dataset
-      # textOutput("ADAEreminder")
+      uiOutput("ADAEreminder")
 
     ),
 
@@ -36,18 +36,18 @@ ui <- fluidPage(
                               DT::dataTableOutput("AEsummary"),
                               br(), br(),
 
-                              # number of AE and parameter for preplot
+                              # number of AE and parameter for PREplot
                               fluidRow(
-                                textOutput("preplottext"),
-                                tags$head(tags$style("#preplottext{
+                                textOutput("PREplottext"),
+                                tags$head(tags$style("#PREplottext{
                                                       font-size: 20px;
                                                      font-style: bold;
                                                      }")),
                                 column(width=4, offset=0,
-                                       uiOutput("PTnumpreplot")
+                                       uiOutput("PTnumPREplot")
                                        ),
                                 column(width=4, offset = 0,
-                                       uiOutput("parampreplot")
+                                       uiOutput("paramPREplot")
                                        )
                               ),
                               plotOutput("PREplot"),
@@ -124,7 +124,7 @@ ui <- fluidPage(
                                         br(),
                                     fluidRow(
                                       column(3,
-                                             numericInput("HieradaptInput", "Adaptation", value = 200),
+                                             numericInput("HieradaptInput", "Adaptation", value = 1000),
                                              numericInput("HierthinInput", "Thin", value = 20),
                                              numericInput("alpha.theta.input",HTML("&alpha;<sub>&theta;</sub>") , value = 3),
                                              numericInput("mu.theta.0.0.input",HTML("&mu;<sub>&theta;00</sub>") , value = 0),
@@ -134,8 +134,8 @@ ui <- fluidPage(
 
                                              ),
                                       column(3,
-                                             numericInput("HierburnInput", "Burn In", value = 200),
-                                             numericInput("HierchainInput", "Chains", value = 1),
+                                             numericInput("HierburnInput", "Burn In", value = 5000),
+                                             numericInput("HierchainInput", "Chains", value = 2),
                                              numericInput("mu.gamma.0.0.input",HTML("&mu;<sub>&gamma;00</sub>") , value = 0),
                                              numericInput("alpha.theta.0.0.input",HTML("&alpha;<sub>&theta;00</sub>") , value = 3),
                                              numericInput("beta.theta.input",HTML("&beta;<sub>&theta;</sub>") , value = 1),
@@ -144,7 +144,7 @@ ui <- fluidPage(
 
                                              ),
                                       column(3,
-                                             numericInput("HieriterInput", "Iterations", value = 1000),
+                                             numericInput("HieriterInput", "Iterations", value = 10000),
                                              numericInput("alpha.gamma.input",HTML("&alpha;<sub>&gamma;</sub>") ,  value = 3),
                                              numericInput("alpha.gamma.0.0.input",HTML("&alpha;<sub>&gamma;00</sub>") , value = 3),
                                              numericInput("lambda.alpha.input",HTML("&lambda;<sub>&alpha;</sub>"), value = 0.1),
@@ -159,7 +159,10 @@ ui <- fluidPage(
                              column(3,
                                     offset=0,
                                     div(style='margin-left: -10em;',
-                                    tags$h4("Plot top Adeverse Events"),
+                                    # tags$h4("Plot top Adeverse Events"),
+                                    tags$h4("Select the plot"),
+                                    radioButtons("Hierplotselect", label=NULL, choices=c("Compare raw data and model", "Plot Top Adverse Events"),
+                                                 selected='Compare raw data and model'),
                                     numericInput("Hierplotptnum", "Number of AEs to plot", value=10),
                                     selectInput("Hierplotparam", "summary statistics based on to select AE",
                                                 c("risk difference", "odds ratio"), selected = "risk difference"),
@@ -218,7 +221,7 @@ ui <- fluidPage(
                                   fluidRow(
                                     column(3,
                                            offset=0,
-                                           numericInput("IsingburnInput", "Burn In", value = 200),
+                                           numericInput("IsingburnInput", "Burn In", value = 5000),
                                            numericInput("IsingthinInput", "Thin", value = 20),
                                            numericInput("beta.input", HTML("&beta;"), value = 0.75),
                                            numericInput("beta.t.input", HTML("&beta;<sup>t</sup>"), value = 0.75),
@@ -228,7 +231,7 @@ ui <- fluidPage(
                                            ),
                                     column(3,
                                            offset=0,
-                                           numericInput("IsingiterInput", "Iterations", value = 1000),
+                                           numericInput("IsingiterInput", "Iterations", value = 10000),
                                            numericInput("alpha.input",HTML("&alpha;") , value = 0.25),
                                            numericInput("alpha.t.input",HTML("&alpha;<sup>t</sup>") , value = 0.25),
                                            numericInput("alpha.c.input",HTML("&alpha;<sup>c</sup>") , value = 0.25),
@@ -244,7 +247,10 @@ ui <- fluidPage(
                            column(6,
                                   offset=0,
                                   div(style='margin :0%;',
-                                      tags$h4("Plot top Adeverse Events"),
+                                      # tags$h4("Plot top Adeverse Events"),
+                                      tags$h4("Select the plot"),
+                                      radioButtons("Isingplotselect", label=NULL, choices=c("Compare raw data and model", "Plot Top Adverse Events"),
+                                                   selected='Compare raw data and model'),
                                       # Let user input the Gibbs sampling paramters
                                       numericInput("Isingplotptnum", "Number of AEs to plot", value=10),
                                       selectInput("Isingplotparam", "summary statistics based on to select AE",

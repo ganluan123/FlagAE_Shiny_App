@@ -8,8 +8,8 @@ library(ggplot2)
 
 #####################################################################################################
 #######################################################################################################
-ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
-ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
+# ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
+# ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
 
 #######################################################################################################
 #######################################################################################################
@@ -22,51 +22,90 @@ server <- function(input, output) {
   ##############                                             #####################
   ################################################################################
 
-  AEdata<-function(){
-   preprocess(adsl=ADSL, adae=ADAE)
-  }
+  # AEdata<-function(){
+  #  preprocess(adsl=ADSL, adae=ADAE)
+  # }
 
 
 #######################################################################################################
 #######################################################################################################
-  # # get the ADSL.csv
-  # # ADSL is a reactive variable
-  # ADSL<-reactive({
-  #   ADSLread<-input$ADSLInput
-  #   if (is.null(ADSLread))
-  #     return(NULL)
-  #   read.csv(ADSLread$datapath, header=TRUE)
+  # get the ADSL.csv
+  # ADSL is a reactive variable
+  ADSL<-reactive({
+    ADSLread<-input$ADSLInput
+    if (is.null(ADSLread))
+      return(NULL)
+    read.csv(ADSLread$datapath, header=TRUE)
+  })
+
+  # reminder about ADSL dataset
+  output$ADSLreminder<-renderUI({
+    if(is.null(ADSL())) return (NULL)
+    if (!('USUBJID' %in% names(ADSL()))) return (textOutput("ADSLreminderUSUBJID"))
+    if (!('TRTCTR' %in% names(ADSL()))) return (textOutput("ADSLreminderTRTCTR"))
+  })
+
+  # reminder for column 'USUBJID'
+  output$ADSLreminderUSUBJID<-renderText({
+    "ADSL should include the column 'USUBJID' "
+  })
+
+  # reminder for column 'TRTCTR'
+  output$ADSLreminderTRTCTR<-renderText({
+    "ADSL should include the column 'TRTCTR' "
+  })
+
+  # reminder about ADAE dataset
+  output$ADAEreminder<-renderUI({
+    if(is.null(ADAE())) return (NULL)
+    if (!('USUBJID' %in% names(ADAE()))) return (textOutput("ADAEreminderUSUBJID"))
+    if (!('AEBODSYS' %in% names(ADAE()))) return (textOutput("ADAEreminderAEBODSYS"))
+    if (!('AEDECOD' %in% names(ADAE()))) return (textOutput("ADAEreminderAEDECOD"))
+  })
+
+  # reminder for column 'USUBJID'
+  output$ADAEreminderUSUBJID<-renderText({
+    "ADAE should include the column 'USUBJID' "
+  })
+
+  # reminder for column 'AEBODSYS'
+  output$ADAEreminderAEBODSYS<-renderText({
+    "ADAE should include the column 'AEBODSYS' "
+  })
+
+  # reminder for column 'AEDECOD'
+  output$ADAEreminderAEDECOD<-renderText({
+    "ADAE should include the column 'AEDECOD' "
+  })
+
+
+  # get the ADAE.csv
+  # ADAE is a reactive variable
+  ADAE<-reactive({
+    ADAEread<-input$ADAEInput
+    if (is.null(ADAEread))
+      return(NULL)
+    read.csv(ADAEread$datapath, header=TRUE)
+  })
+
+  # # reminder about ADSL dataset
+  # output$ADAEreminder<-renderText({
+  #   "ADAE should containing the following columns: "
   # })
-  #
-  # # # reminder about ADSL dataset
-  # # output$ADSLreminder<-renderText({
-  # #   "ADSL should containing the following columns: "
-  # # })
-  #
-  # # get the ADAE.csv
-  # # ADAE is a reactive variable
-  # ADAE<-reactive({
-  #   ADAEread<-input$ADAEInput
-  #   if (is.null(ADAEread))
-  #     return(NULL)
-  #   read.csv(ADAEread$datapath, header=TRUE)
-  # })
-  #
-  # # # reminder about ADSL dataset
-  # # output$ADAEreminder<-renderText({
-  # #   "ADAE should containing the following columns: "
-  # # })
-  #
-  # # get the AEdata from preprocess4 function in libarary FlagAE
-  # AEdata<-reactive({
-  #
-  #   ADSLread<-input$ADSLInput
-  #   ADAEread<-input$ADAEInput
-  #   if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
-  #
-  #   preprocess(adsl=ADSL(), adae=ADAE())
-  # })
-  #
+
+  # get the AEdata from preprocess4 function in libarary FlagAE
+  AEdata<-reactive({
+
+    ADSLread<-input$ADSLInput
+    ADAEread<-input$ADAEInput
+    if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
+    if(!( (('USUBJID' %in% names(ADSL()))) & ('TRTCTR' %in% names(ADSL()))
+          & ('USUBJID' %in% names(ADAE())) & ('AEBODSYS' %in% names(ADAE()))
+          & ('AEDECOD' %in% names(ADAE())) )) return (NULL)
+
+    preprocess(adsl=ADSL(), adae=ADAE())
+  })
+
 
 # ###############################################################################################################
 # ###############################################################################################################
@@ -82,34 +121,34 @@ server <- function(input, output) {
     caption = "Subject and adverse event summary"
     )
 
-  output$preplottext<-renderText({
+  output$PREplottext<-renderText({
     if (!(is.null(AEdata()))) "Plot of risk difference/odds ratio from raw data"
   })
 
 
-  # take PTnumpreplot and parampreplot
-  output$PTnumpreplot<-renderUI({
+  # take PTnumPREplot and paramPREplot
+  output$PTnumPREplot<-renderUI({
     if (is.null (AEdata())) return ()
-    numericInput("PTnumpreplot", "number of adverse events to show", value = 50)
+    numericInput("PTnumPREplot", "number of adverse events to show", value = 50)
   })
 
-  output$parampreplot<-renderUI({
+  output$paramPREplot<-renderUI({
     if (is.null (AEdata())) return ()
-    selectInput("parampreplot", "summary statistics based on to plot",
+    selectInput("paramPREplot", "summary statistics based on to plot",
                 c("risk difference", "odds ratio"), selected = "risk difference")
   })
 
-  # creat the plot from fucntion preplot
-  preplotInput<-function(){
+  # creat the plot from fucntion PREplot
+  PREplotInput<-function(){
     if (!(is.null(AEdata()))){
-      preplot(aedata=AEdata(), ptnum=input$PTnumpreplot, param=input$parampreplot)
+      PREplot(aedata=AEdata(), ptnum=input$PTnumPREplot, param=input$paramPREplot)
     }
   }
 
   # plot out the plot
   output$PREplot<-renderPlot({
-    if(is.null(AEdata()) | is.null(input$parampreplot) | is.null(input$PTnumpreplot)) return ()
-    preplotInput()
+    if(is.null(AEdata()) | is.null(input$paramPREplot) | is.null(input$PTnumPREplot)) return ()
+    PREplotInput()
   })
 
   # download option
@@ -120,9 +159,9 @@ server <- function(input, output) {
   })
 
   output$PREplotdownloadjpeg <- downloadHandler(
-    filename <- paste0("preplot_with_",input$parampreplot,".jpeg"),
+    filename <- paste0("PREplot_with_",input$paramPREplot,".jpeg"),
     content <- function(file) {
-      ggsave(file, plot=preplotInput())
+      ggsave(file, plot=PREplotInput())
     })
 
   # output the adverse event summary
@@ -267,7 +306,8 @@ server <- function(input, output) {
 
   # link for original paper
   Hierpaperurl<-a(tags$h4("Click here for detailed model information (Check model 1b)")
-                  , href="https://onlinelibrary.wiley.com/doi/full/10.1111/j.0006-341X.2004.00186.x?sid=nlm%3Apubmed")
+                  , href="https://onlinelibrary.wiley.com/doi/full/10.1111/j.0006-341X.2004.00186.x?sid=nlm%3Apubmed"
+                  , target="_blank")
 
   output$Hierpaperlink<-renderUI({
     tagList(Hierpaperurl)
@@ -355,12 +395,12 @@ server <- function(input, output) {
   # show the Hier plot of top AEs
   # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
   output$HierORxlimLB<-renderUI({
-    if (input$Hierplotparam=="risk difference") return ()
+    if (input$Hierplotparam=="risk difference" | input$Hierplotselect=='Compare raw data and model') return ()
     numericInput("HierORxlimLBInput", "x-axis lower limit", value=0)
   })
 
   output$HierORxlimUB<-renderUI({
-    if (input$Hierplotparam=="risk difference") return ()
+    if (input$Hierplotparam=="risk difference" | input$Hierplotselect=='Compare raw data and model') return ()
     numericInput("HierORxlimUBInput", "x-axis upper limit", value=5)
   })
 
@@ -368,13 +408,20 @@ server <- function(input, output) {
     if (Hierv$doPlot==FALSE) return ()
     if (input$HierplotInput==FALSE) return()
     isolate({
-      if (input$Hierplotparam=="risk difference"){
-        Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam)
+      if (input$Hierplotselect=='Plot Top Adverse Events'){
+        if (input$Hierplotparam=="risk difference"){
+          return(Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam))
+        }
+        else {
+          return(Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam,
+                   OR_xlim = c(input$HierORxlimLBInput, input$HierORxlimUBInput)))
+        }
       }
-      else {
-        Hierplot(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam,
-                 OR_xlim = c(input$HierORxlimLBInput, input$HierORxlimUBInput))
+
+      if (input$Hierplotselect=='Compare raw data and model'){
+        return(Compareplot(modeldata=HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam))
       }
+
     })
 
   }
@@ -387,7 +434,7 @@ server <- function(input, output) {
 
   # show the warning if user try to plot before running model
   output$Hiermodelfirst<-renderUI({
-    if(is.null(HierplotInput()) & !(input$HierplotInput==FALSE)) {
+    if(is.null(HIERDATA()) & !(input$HierplotInput==FALSE)) {
       textOutput("HierModelfirstoutput")
       # span(textOutput("Modelfirstoutput"), style="color:red")
     }
@@ -416,13 +463,13 @@ server <- function(input, output) {
 
   # download option for table containing information of AE in the plot
   HiertableInput<-function(){
-    if (Hierv$doPlot==FALSE) return ()
+    if (Hierv$doPlot==FALSE | input$Hierplotselect=='Compare raw data and model' ) return ()
     Hiertable(HIERDATA(), ptnum=input$Hierplotptnum, param=input$Hierplotparam)
   }
 
   output$Hiertabledown<-renderUI({
     if(is.null(HierplotInput())) return ()
-    if(input$HierplotInput==FALSE) return ()
+    if(input$HierplotInput==FALSE | input$Hierplotselect=='Compare raw data and model') return ()
     downloadButton('Hiertabledownload', "Download table for details of AEs shown in plot")
   })
 
@@ -443,7 +490,8 @@ server <- function(input, output) {
 
   # link for original paper
   Isingpaperurl<-a(tags$h4("Click here for detailed model information")
-                  , href="https://onlinelibrary.wiley.com/doi/full/10.1111/biom.12051")
+                  , href="https://onlinelibrary.wiley.com/doi/full/10.1111/biom.12051"
+                  , target="_blank")
 
   output$Isingpaperlink<-renderUI({
     tagList(Isingpaperurl)
@@ -523,12 +571,12 @@ server <- function(input, output) {
   # show the Ising plot of top AEs
   # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
   output$IsingORxlimLB<-renderUI({
-    if (input$Isingplotparam=="risk difference") return ()
+    if (input$Isingplotparam=="risk difference" | input$Isingplotselect=='Compare raw data and model') return ()
     numericInput("IsingORxlimLBInput", "x-axis lower limit", value=0)
   })
 
   output$IsingORxlimUB<-renderUI({
-    if (input$Isingplotparam=="risk difference") return ()
+    if (input$Isingplotparam=="risk difference" | input$Isingplotselect=='Compare raw data and model') return ()
     numericInput("IsingORxlimUBInput", "x-axis upper limit", value=5)
   })
 
@@ -536,13 +584,20 @@ server <- function(input, output) {
     if (Isingv$doPlot==FALSE) return ()
     if (input$IsingplotInput==FALSE) return()
     isolate({
-      if (input$Isingplotparam=="risk difference"){
-        Isingplot(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam)
+      if (input$Isingplotselect=='Plot Top Adverse Events'){
+        if (input$Isingplotparam=="risk difference"){
+          return(Isingplot(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam))
+        }
+        else {
+          return(Isingplot(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam,
+                          OR_xlim = c(input$IsingORxlimLBInput, input$IsingORxlimUBInput)))
+        }
       }
-      else {
-        Isingplot(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam,
-                  OR_xlim = c(input$IsingORxlimLBInput, input$IsingORxlimUBInput))
+
+      if (input$Isingplotselect=='Compare raw data and model'){
+        return(Compareplot(modeldata=ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam))
       }
+
     })
 
   }
@@ -555,7 +610,7 @@ server <- function(input, output) {
 
   # show the warning if user try to plot before running model
   output$Isingmodelfirst<-renderUI({
-    if(is.null(IsingplotInput()) & !(input$IsingplotInput==FALSE)) {
+    if(is.null(ISINGDATA()) & !(input$IsingplotInput==FALSE)) {
       textOutput("IsingModelfirstoutput")
       # span(textOutput("Modelfirstoutput"), style="color:red")
     }
@@ -582,13 +637,13 @@ server <- function(input, output) {
 
   # download option for table containing information of AE in the plot
   IsingtableInput<-function(){
-    if (Isingv$doPlot==FALSE) return ()
+    if (Isingv$doPlot==FALSE | input$Isingplotselect=='Compare raw data and model') return ()
     Isingtable(ISINGDATA(), ptnum=input$Isingplotptnum, param=input$Isingplotparam)
   }
 
   output$Isingtabledown<-renderUI({
     if(is.null(IsingplotInput())) return ()
-    if(input$IsingplotInput==FALSE) return ()
+    if(input$IsingplotInput==FALSE | input$Isingplotselect=='Compare raw data and model') return ()
     downloadButton('Isingtabledownload', "Download table for details of AEs shown in plot")
   })
 
@@ -708,8 +763,8 @@ server <- function(input, output) {
 
   CVtableInput<-reactive({
     if (CVv$doPlot==0 ) return ()
-    # CVAELIST<-kfdpar(ADSL(), ADAE(), k=input$CVkfdInput)
-    CVAELIST<-kfdpar(ADSL, ADAE, k=input$CVkfdInput)
+    CVAELIST<-kfdpar(ADSL(), ADAE(), k=input$CVkfdInput)
+    # CVAELIST<-kfdpar(ADSL, ADAE, k=input$CVkfdInput)
 
     CVLOSSHIER<-CVhier(AElist=CVAELIST, n_burn=input$HierburnInput,
                      n_iter=input$HieriterInput, thin=input$HierthinInput, n_adapt = input$HieradaptInput,
