@@ -1,5 +1,5 @@
-library(shiny)
-ui <- fluidPage(
+
+shinyUI (fluidPage(
 
   # enter the title
   titlePanel(title="Flag Adverse Event"),
@@ -8,13 +8,18 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(width=2,
       # ADSL input
-      fileInput("ADSLInput", "Please upload ADSL file"),
+      fileInput("ADSLInput", "Please upload ADSL file", 
+                accept = c("text/csv", "text/comma-separated-values,text/plain",".csv")),
       # reminder about ADSL dataset
       uiOutput("ADSLreminder"),
+      br(),
       # ADAE input
-      fileInput("ADAEInput", "Please upload ADAE file"),
+      fileInput("ADAEInput", "Please upload ADAE file",
+                accept = c("text/csv", "text/comma-separated-values,text/plain",".csv")),
       # reminder about ADAE dataset
-      uiOutput("ADAEreminder")
+      uiOutput("ADAEreminder"),
+      br(),
+      htmlOutput("fileloadreminder")
 
     ),
 
@@ -75,8 +80,11 @@ ui <- fluidPage(
                              # Let user select the number of AE to show and the confidence level
                              # use uiOutput to make sure the option will not show before
                              # user selecting to show the plot
-                             uiOutput("PTnumInput"),
-                             uiOutput("confInput"),
+                             # uiOutput("PTnumInput"),
+                             numericInput("PTnumInput", "number of adverse events to show", min = 1, value = 10),
+                             # uiOutput("confInput"),
+                             numericInput("confInput", "confidence level for Binomial CI",
+                                          value = 0.95, min=0, max=1, step = 0.025),
                              # Let user to select whether to calcuate the result from Fisher Exact Test
                              #checkboxInput("BCIInput", "Check the box to show the Fisher Exact Test result", FALSE),
                              actionButton("BCIInput", "Run", width='25%'),
@@ -103,7 +111,7 @@ ui <- fluidPage(
                              uiOutput("BCItabledown")
                              ),
 
-                  ################################################################################
+                  ###############################################################################
                   ##############                                             #####################
                   ##############        3 stage Hierarchical model           #####################
                   ##############                                             #####################
@@ -189,7 +197,7 @@ ui <- fluidPage(
                              )
                            ),
 
-
+                  
                            # since the simulation usually takes a long time,
                            # have a run button to make sure that the simulation
                            # only run after selecting all the parameter and hit the run button
@@ -352,4 +360,5 @@ ui <- fluidPage(
 
   )
 
+)
 )
