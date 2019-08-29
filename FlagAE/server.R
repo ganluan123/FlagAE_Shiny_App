@@ -3,13 +3,6 @@ library(shiny)
 # options(shiny.maxRequestSize=100*1024^2)
 # call the libarary FlagAE
 
-
-
-#####################################################################################################
-#######################################################################################################
-# ADSL<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADSL_TRTCTR.csv")
-# ADAE<-read.csv("H:\\Safety data\\R Shiny App\\FlagAE\\dataset\\demo_ADAE_TRTCTR.csv")
-
 #######################################################################################################
 #######################################################################################################
 
@@ -25,14 +18,6 @@ shinyServer(function(input, output) {
   ##############                                             #####################
   ################################################################################
 
-  # AEdata<-function(){
-  #  preprocess(adsl=ADSL, adae=ADAE)
-  # }
-
-
-#######################################################################################################
-#######################################################################################################
-  
   output$fileloadreminder<-renderUI(
     HTML(
       paste(
@@ -45,23 +30,18 @@ shinyServer(function(input, output) {
   
   # get the ADSL.csv
   # ADSL is a reactive variable
-  
-  
-  
-  # ADSL<-reactive({
-  #   ADSLread<-input$ADSLInput
-  #   if (is.null(ADSLread))
-  #     return(NULL)
-  #   read.csv(ADSLread$datapath, header=TRUE)
-  # })
 
-  
-  
   ADSL<-reactive({
     req(input$ADSLInput)
     return(read.csv(input$ADSLInput$datapath, header=TRUE))
   })
   
+  # create a variable to make sure that whenever user upload a new ADSL file, all the previous calculation
+  # will disappear and will not recalculate before use hit the RUN or PLOT button
+  ADSLupload<-reactive({
+    req(input$ADSLInput)
+    runif(1)
+  })
   
   
   # reminder about ADSL dataset
@@ -108,33 +88,19 @@ shinyServer(function(input, output) {
   # get the ADAE.csv
   # ADAE is a reactive variable
   
-  
-  
-  # ADAE<-reactive({
-  #   ADAEread<-input$ADAEInput
-  #   if (is.null(ADAEread))
-  #     return(NULL)
-  #   read.csv(ADAEread$datapath, header=TRUE)
-  # })
-
-  
-  
   ADAE<-reactive({
     req(input$ADAEInput)
     return(read.csv(input$ADAEInput$datapath, header=TRUE))
   })
   
-  # # reminder about ADSL dataset
-  # output$ADAEreminder<-renderText({
-  #   "ADAE should containing the following columns: "
-  # })
-
+  ADAEupload<-reactive({
+    req(input$ADAEInput)
+    runif(1)
+  })
+  
   # get the AEdata from preprocess4 function in libarary FlagAE
   AEdata<-reactive({
 
-    # ADSLread<-input$ADSLInput
-    # ADAEread<-input$ADAEInput
-    # if(is.null(ADSLread) | is.null(ADAEread)) return (NULL)
     req(input$ADSLInput)
     req(input$ADAEInput)
     if(( (('USUBJID' %in% names(ADSL()))) & ('TRTCTR' %in% names(ADSL()))
@@ -142,13 +108,9 @@ shinyServer(function(input, output) {
           & ('AEDECOD' %in% names(ADAE())) )) return (preprocess(adsl=ADSL(), adae=ADAE()))
   })
 
-
-# ###############################################################################################################
-# ###############################################################################################################
   # output subject and adverse event summary
   output$AEsummary<-DT::renderDataTable({
 
-    # if (is.null (AEdata())) return ()
     req(AEdata())
     
     Item<-c("total subjects", "treatment group", "control group", "total SOC", "total PT")
@@ -179,6 +141,8 @@ shinyServer(function(input, output) {
 
   # creat the plot from fucntion PREplot
   PREplotInput<-function(){
+    req(input$PTnumPREplot)
+    req(input$paramPREplot)
     if (!(is.null(AEdata()))){
       PREplot(aedata=AEdata(), ptnum=input$PTnumPREplot, param=input$paramPREplot)
     }
@@ -194,6 +158,8 @@ shinyServer(function(input, output) {
 
   # download option
   output$PREplotdownjpeg<-renderUI({
+    req(input$PTnumPREplot)
+    req(input$paramPREplot)
     if(!(is.null(AEdata()))){
       downloadButton('PREplotdownloadjpeg', "Download the plot")
     }
@@ -202,6 +168,8 @@ shinyServer(function(input, output) {
   output$PREplotdownloadjpeg <- downloadHandler(
     filename <- paste0("PREplot_with_",input$paramPREplot,".jpeg"),
     content <- function(file) {
+      req(input$PTnumPREplot)
+      req(input$paramPREplot)
       ggsave(file, plot=PREplotInput())
     })
 
@@ -237,17 +205,7 @@ shinyServer(function(input, output) {
   ################################################################################
 
 
-  # output the Plot for fisher exact test
-
-  # take PTnumInput and confInput if user select to plot out Fisher Exact Test Plot
-  # output$PTnumInput<-renderUI({
-  #   numericInput("PTnumInput", "number of adverse events to show", min = 1, value = 10)
-  # })
-  # 
-  # output$confInput<-renderUI({
-  #   numericInput("confInput", "confidence level for Binomial CI",
-  #                              value = 0.95, min=0, max=1, step = 0.025)
-  # })
+  # output the Plot for Binomial confidence interval
 
   # create the plot with activation button
 
@@ -265,12 +223,15 @@ shinyServer(function(input, output) {
   # whenever user change PTnumInput or confInput, the plot
   # will disappear and wont run before user click run button
  
-  observeEvent((input$PTnumInput & input$confInput), {
+  observeEvent((input$PTnumInput & input$confInput
+                & ADSLupload() & ADAEupload()), {
     BCIv$doPlot <- FALSE
   })
 
   BCIplotInput<-function(){
     req(AEdata())
+    req(input$PTnumInput)
+    req(input$confInput)
     if (!(BCIv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput))) {
       isolate({
         BCIplot(aedata=AEdata(), ptnum = input$PTnumInput, conf.level = input$confInput)
@@ -288,6 +249,8 @@ shinyServer(function(input, output) {
 
   output$BCIplotdownjpeg<-renderUI({
     req(BCIplotInput())
+    req(input$PTnumInput)
+    req(input$confInput)
     if(!(BCIv$doPlot==FALSE) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
       downloadButton('BCIplotdownloadjpeg', "Download the plot")
     }
@@ -297,14 +260,16 @@ shinyServer(function(input, output) {
     filename <- "BCIplot.jpeg",
     content <- function(file) {
       req(BCIplotInput())
+      req(input$PTnumInput)
+      req(input$confInput)
       ggsave(file, plot=BCIplotInput())
   })
   
-
-
   # create the table for details of AE selected in above plot
   BCItableInput<-reactive({
     req(AEdata())
+    req(input$PTnumInput)
+    req(input$confInput)
     if (!(BCIv$doPlot==0 | is.null(input$PTnumInput) | is.null(input$confInput))) {
       topPTlist<-BCItable(aedata=AEdata(), ptnum=input$PTnumInput, conf.level = input$confInput)
     }
@@ -320,6 +285,8 @@ shinyServer(function(input, output) {
   # create the download option for user to download the table
   output$BCItabledown<-renderUI({
     req(BCItableInput())
+    req(input$PTnumInput)
+    req(input$confInput)
     if(!(BCIv$doPlot==0) & !(is.null(input$PTnumInput)) & !(is.null(input$confInput))){
       downloadButton('BCItabledownload', "Download the table")
     }
@@ -329,6 +296,8 @@ shinyServer(function(input, output) {
     filename = function(){paste("BCItable", ".csv")},
     content =function(file){
       req(BCItableInput())
+      req(input$PTnumInput)
+      req(input$confInput)
       write.csv(BCItableInput(), file, row.names = FALSE)
     })
 
@@ -378,7 +347,9 @@ shinyServer(function(input, output) {
                   input$beta.gamma.input & input$beta.theta.input &
                   input$tau.gamma.0.0.input & input$beta.gamma.0.0.input &
                   input$tau.theta.0.0.input & input$beta.theta.0.0.input &
-                  input$lambda.beta.input), {
+                  input$lambda.beta.input
+                & ADSLupload() & ADAEupload()
+                ), {
     Hierv$doPlot <- FALSE
     # also update for Cross validation calculation
     CVv$doPlot <- FALSE
@@ -494,7 +465,6 @@ shinyServer(function(input, output) {
   })
 
   output$HierModelfirstoutput<-renderText({
-    # if (!(is.null(HierplotInput()) & !(input$HierplotInput==FALSE))) return ()
     "Error: Please run the model before plot"
   })
 
@@ -508,8 +478,6 @@ shinyServer(function(input, output) {
   output$Hierplotdownload <- downloadHandler(
     filename <- function(){paste0("Hierplot_",input$Hierplotparam, ".jpeg")},
     content <- function(file) {
-      #jpeg(file, width = 1100, height=720, quality = 450, pointsize = 9, res = 180)
-      #jpeg(file)
       req(HierplotInput())
       ggsave(file, plot=HierplotInput())
     })
@@ -526,7 +494,6 @@ shinyServer(function(input, output) {
   output$Hiertabledown<-renderUI({
     req(HierplotInput())
     req(HiertableInput())
-    # if(is.null(HierplotInput())) return ()
     if (!(input$HierplotInput==FALSE | input$Hierplotselect=='Compare raw data and model')){
       downloadButton('Hiertabledownload', "Download table for details of AEs shown in plot")
     } 
@@ -580,6 +547,7 @@ shinyServer(function(input, output) {
                   input$alpha.t.input & input$beta.t.input &
                   input$alpha.c.input & input$beta.c.input &
                   input$rho.input & input$theta.input
+                & ADSLupload() & ADAEupload()
   ), {
     Isingv$doPlot <- FALSE
     # also update for Cross validation calculation
@@ -679,14 +647,11 @@ shinyServer(function(input, output) {
   # show the warning if user try to plot before running model
   output$Isingmodelfirst<-renderUI({
     if(is.null(ISINGDATA()) & !(input$IsingplotInput==FALSE)) {
-      # textOutput("IsingModelfirstoutput")
       span(textOutput("IsingModelfirstoutput"), style="color:red")
-      # span(textOutput("Modelfirstoutput"), style="color:red")
     }
   })
 
   output$IsingModelfirstoutput<-renderText({
-    # if (!(is.null(IsingplotInput()) & !(input$IsingplotInput==FALSE))) return ()
     "Please run the model before plot"
   })
 
@@ -728,14 +693,14 @@ shinyServer(function(input, output) {
     }
   )
 
-  # ################################################################################
-  # ##############                                             #####################
-  # ##############      Comparison of two models               #####################
-  # ##############                                             #####################
-  # ################################################################################
-  # 
-  # ###############################################################################
-  # ###############################################################################
+    ################################################################################
+    ##############                                             #####################
+    ##############      Comparison of two models               #####################
+    ##############                                             #####################
+    ################################################################################
+    
+    ###############################################################################
+    ###############################################################################
   # compare by plotting
   # if user choose to plot based on "odds ratio", provide the option to select y-axis limit
   output$HIORxlimLB<-renderUI({
@@ -823,7 +788,7 @@ shinyServer(function(input, output) {
 
   ###############################################################################
   ###############################################################################
-
+  # compare by cross validation error
 
   observeEvent(input$CVInput, {
     # 0 will be coerced to FALSE
@@ -834,7 +799,6 @@ shinyServer(function(input, output) {
   observeEvent((input$CVkfdInput), {
     CVv$doPlot <- FALSE
   })
-
 
   CVtableInput<-reactive({
     req(input$ADSLInput)
