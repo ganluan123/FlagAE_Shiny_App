@@ -1,7 +1,6 @@
 library(shiny)
 # increase the maximum allowed size for uploading file
 # options(shiny.maxRequestSize=100*1024^2)
-# call the libarary FlagAE
 
 #######################################################################################################
 #######################################################################################################
